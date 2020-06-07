@@ -5,21 +5,21 @@ namespace App\Console\Commands;
 use App\Http\Controllers\StockSyncController;
 use Illuminate\Console\Command;
 
-class UpdateStockList extends Command
+class UpdateStockDayliyAll extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'update:stockList';
+    protected $signature = 'update:stockDailyAll';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = '更新股票列表';
+    protected $description = '拉取所有股票日线';
 
     /**
      * Create a new command instance.
@@ -40,7 +40,6 @@ class UpdateStockList extends Command
     {
         //
         $ssc = new StockSyncController();
-        $ssc->syncStockList();
-
+        $ssc->syncStockDailyAll();
     }
 }

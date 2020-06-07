@@ -23,6 +23,6 @@ Route::get("hello", function (\App\Repository\Facade\RDS\RDS $rds) {
 });
 
 Route::get('test', function (\App\Client\TushareClient $client) {
-  return $client->stockList();
+  return $client->stockDaily("000001.SZ");
 });
 

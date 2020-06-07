@@ -92,6 +92,7 @@ class StockSyncController extends Controller
         $insertData = [];
 
         Log::info("update stock daily symbol:{$stock->symbol} name:{$stock->name}");
+        $allInsertDate = [];
         foreach ($items as $item) {
             $trade_date = $item[1];
             if (StockDaily::where('trade_date', $trade_date)->where('stock_id', $stockId)->exists()) {
@@ -105,8 +106,9 @@ class StockSyncController extends Controller
                 }
                 $insertData[$k] = $v;
             }
-            StockDaily::create($insertData);
+            $allInsertDate[] = $insertData;
         }
+        StockDaily::insert($allInsertDate);
 
     }
 

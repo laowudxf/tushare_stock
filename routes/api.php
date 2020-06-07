@@ -22,7 +22,5 @@ Route::get("hello", function (\App\Repository\Facade\RDS\RDS $rds) {
 //    dd($province);
 });
 
-Route::get('test', function (\App\Client\TushareClient $client) {
-  return $client->stockDaily("000001.SZ");
-});
+Route::get('test', "StockController@test");
 

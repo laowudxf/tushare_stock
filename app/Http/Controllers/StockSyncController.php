@@ -72,11 +72,12 @@ class StockSyncController extends Controller
            $client = new TushareClient();
            foreach ($allStocks as $stock) {
                $result = $client->stockDaily($stock->ts_code);
-               $this->dealOneStockDaily($result, $stock->id);
+               $this->dealOneStockDaily($result, $stock);
            }
     }
 
-    private function dealOneStockDaily($data, $stockId) {
+    private function dealOneStockDaily($data, $stock) {
+        $stockId = $stock->id;
 
         if ($data["code"] != 0) {
             Log::warning("sync stock daily failed msg:".$data["msg"]);
@@ -90,6 +91,7 @@ class StockSyncController extends Controller
 
         $insertData = [];
 
+        Log::info("update stock daily symbol:{$stock->symbol} name:{$stock->name}");
         foreach ($items as $item) {
             $trade_date = $item[1];
             if (StockDaily::where('trade_date', $trade_date)->where('stock_id', $stockId)->exists()) {

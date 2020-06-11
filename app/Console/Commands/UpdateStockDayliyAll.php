@@ -12,7 +12,7 @@ class UpdateStockDayliyAll extends Command
      *
      * @var string
      */
-    protected $signature = 'update:stockDailyAll';
+    protected $signature = 'update:stockDailyAll {--week}';
 
     /**
      * The console command description.
@@ -39,7 +39,12 @@ class UpdateStockDayliyAll extends Command
     public function handle()
     {
         //
+        $week = $this->option("week");
         $ssc = new StockSyncController();
-        $ssc->syncStockDailyAll();
+        if ($week) {
+            $ssc->syncStockDailyWeek();
+        } else {
+            $ssc->syncStockDailyAll();
+        }
     }
 }

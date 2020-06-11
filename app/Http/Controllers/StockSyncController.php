@@ -9,6 +9,7 @@ use App\Models\Market;
 use App\Models\Stock;
 
 use App\Models\StockDaily;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class StockSyncController extends Controller
@@ -74,6 +75,15 @@ class StockSyncController extends Controller
                $result = $client->stockDaily($stock->ts_code);
                $this->dealOneStockDaily($result, $stock);
            }
+    }
+
+    function syncStockDailyWeek() {
+        $allStocks = Stock::all();
+        $client = new TushareClient();
+        foreach ($allStocks as $stock) {
+            $result = $client->stockDaily($stock->ts_code, null, now()->subDays(7)->format("Ymd"), now()->format("Ymd"));
+            $this->dealOneStockDaily($result, $stock);
+        }
     }
 
     private function dealOneStockDaily($data, $stock) {

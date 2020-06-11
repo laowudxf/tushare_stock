@@ -9,8 +9,10 @@ use App\Models\Market;
 use App\Models\Stock;
 
 use App\Models\StockDaily;
+use App\Models\StockFq;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use function foo\func;
 
 class StockSyncController extends Controller
 {
@@ -122,7 +124,100 @@ class StockSyncController extends Controller
 
     }
 
-    function syncStockDaily() {
+    function syncStockFQ() {
+        $allStocks = Stock::all();
+        $client = new TushareClient();
+        foreach ($allStocks as $key => $stock) {
+            Log::info("index: {$key} update stock daily symbol:{$stock->symbol} name:{$stock->name}");
+            $this->dealOneStockFQ($client, $stock);
+        }
+    }
 
+    function dealOneStockFQ($client,Stock $stock) {
+        $lastStockRecord = $stock->stockDailies()->orderBy("trade_date")->first();
+
+        $startDate = $lastStockRecord->trade_date;
+        $result = $client->stockFQ($stock->ts_code, null, $startDate, null);
+
+        if ($result["code"] != 0) {
+            Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");
+            return;
+        }
+
+        $data = $result["data"];
+        $items = $data["items"];
+
+
+        while ($data["has_more"] == true) {
+            $count = count($items);
+            $endDate = $items[$count - 1];
+
+            $result = $client->stockFQ($stock->ts_code, null, $startDate, $endDate[1]);
+
+            if ($result["code"] != 0) {
+                Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");
+                return;
+            }
+
+            $data = $result["data"];
+            $items = array_merge($items, $result["data"]["items"]);
+        }
+
+        $insertData = [];
+        $a = [];
+        $r = $stock->stockDailies()->get();
+        foreach ($r as $v) {
+            $a[strval($v->trade_date)] = $v->id;
+        }
+        dd($a);
+        foreach ($items as $key => $item) {
+
+            Log::info($key);
+            StockDaily::where(["stock_id" => $stock->id, "trade_date" => $item[1]])->update(["fq_factor" => $item[2]]);
+//            $insertData[] = [
+//                "trade_date" => $item[1],
+//                "stock_id" => $stock->id,
+//                "fq_factor" => $item[2]
+//            ];
+        }
+        dd(1);
+    }
+
+    public function updateBatch($tableName,$multipleData = [])
+    {
+        try {
+            if (empty($multipleData)) {
+                throw new \Exception("数据不能为空");
+            }
+            $firstRow  = current($multipleData);
+
+            $updateColumn = array_keys($firstRow);
+            // 默认以id为条件更新，如果没有ID则以第一个字段为条件
+            $referenceColumn = isset($firstRow['id']) ? 'id' : current($updateColumn);
+            unset($updateColumn[0]);
+            // 拼接sql语句
+            $updateSql = "UPDATE " . $tableName . " SET ";
+            $sets      = [];
+            $bindings  = [];
+            foreach ($updateColumn as $uColumn) {
+                $setSql = "`" . $uColumn . "` = CASE ";
+                foreach ($multipleData as $data) {
+                    $setSql .= "WHEN `" . $referenceColumn . "` = ? THEN ? ";
+                    $bindings[] = $data[$referenceColumn];
+                    $bindings[] = $data[$uColumn];
+                }
+                $setSql .= "ELSE `" . $uColumn . "` END ";
+                $sets[] = $setSql;
+            }
+            $updateSql .= implode(', ', $sets);
+            $whereIn   = collect($multipleData)->pluck($referenceColumn)->values()->all();
+            $bindings  = array_merge($bindings, $whereIn);
+            $whereIn   = rtrim(str_repeat('?,', count($whereIn)), ',');
+            $updateSql = rtrim($updateSql, ", ") . " WHERE `" . $referenceColumn . "` IN (" . $whereIn . ")";
+            // 传入预处理sql语句和对应绑定数据
+            return DB::update($updateSql, $bindings);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

@@ -20,4 +20,8 @@ class Stock extends Model
     function market() {
        return $this->belongsTo(Market::class);
     }
+
+    function stockDailies() {
+       return $this->hasMany(StockDaily::class);
+    }
 }

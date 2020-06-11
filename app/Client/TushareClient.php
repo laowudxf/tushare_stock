@@ -12,6 +12,7 @@ class TushareClient
 
     const URI_STOCK_BASIC = "stock_basic";
     const URI_DAILY = "daily";
+    const URI_FQ = "adj_factor";
     private  $client;
     public function __construct()
     {
@@ -30,6 +31,23 @@ class TushareClient
             $param = array_merge($param, ["start_date" => $startDate, "end_date" => $endDate]);
         }
         return $this->sendReqest(self::URI_DAILY, $param);
+    }
+
+    public function stockFQ($tsCode, $tradeDate = null, $startDate = null, $endDate = null) {
+        $param = ["ts_code" => $tsCode];
+        if($tradeDate) {
+            $param = array_merge($param, ["trade_date" => $tradeDate]);
+        }
+        
+        if ($startDate) {
+            $param = array_merge($param, ["start_date" => $startDate]);
+        }
+
+        if ($endDate) {
+            $param = array_merge($param, ["end_date" => $endDate]);
+        }
+
+        return $this->sendReqest(self::URI_FQ, $param);
     }
 
     private function sendReqest($uri,$param = []) {

@@ -15,11 +15,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get("hello", function (\App\Repository\Facade\RDS\RDS $rds) {
-    $stringtime = date("YmdHis",time());
-    dd(strtotime($stringtime));
-//     $json_str = file_get_contents( resource_path('province.json'));
-//     $province = json_decode($json_str, true);
-//    dd($province);
+    $c = new \App\Http\Controllers\StockSyncController();
+    $c->syncStockFQ();
 });
 
 Route::get('test', "StockController@test");

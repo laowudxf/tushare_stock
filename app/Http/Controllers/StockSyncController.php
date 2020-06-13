@@ -169,18 +169,25 @@ class StockSyncController extends Controller
         foreach ($r as $v) {
             $a[strval($v->trade_date)] = $v->id;
         }
-        dd($a);
         foreach ($items as $key => $item) {
 
-            Log::info($key);
-            StockDaily::where(["stock_id" => $stock->id, "trade_date" => $item[1]])->update(["fq_factor" => $item[2]]);
-//            $insertData[] = [
-//                "trade_date" => $item[1],
-//                "stock_id" => $stock->id,
-//                "fq_factor" => $item[2]
-//            ];
+            $trade_date = $item[1];
+            if (isset($a[strval($trade_date)]) == false) {
+               continue;
+            }
+
+            $record_id = $a[strval($trade_date)];
+
+            $insertData[] = [
+                "id" => $record_id,
+                "fq_factor" => $item[2]
+            ];
         }
-        dd(1);
+
+        $chunk_datas = array_chunk($insertData, 200, true);
+        foreach ($chunk_datas as $chunk_data) {
+            $this->updateBatch($chunk_data);
+        }
     }
 
     public function updateBatch($tableName,$multipleData = [])

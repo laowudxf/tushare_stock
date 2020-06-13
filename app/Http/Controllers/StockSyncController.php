@@ -11,6 +11,7 @@ use App\Models\Stock;
 use App\Models\StockDaily;
 use App\Models\StockFq;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use function foo\func;
 
@@ -186,7 +187,7 @@ class StockSyncController extends Controller
 
         $chunk_datas = array_chunk($insertData, 200, true);
         foreach ($chunk_datas as $chunk_data) {
-            $this->updateBatch($chunk_data);
+            $this->updateBatch("stock_dailies",$chunk_data);
         }
     }
 
@@ -224,6 +225,7 @@ class StockSyncController extends Controller
             // 传入预处理sql语句和对应绑定数据
             return DB::update($updateSql, $bindings);
         } catch (\Exception $e) {
+            Log::error("复权 插入数据为空");
             return false;
         }
     }

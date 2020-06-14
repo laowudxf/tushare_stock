@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\StockDaily;
+use App\StockStrategies\DefaultStockStrategy;
+use App\StockStrategies\StrategyRunContainer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
@@ -11,16 +13,18 @@ class StockController extends Controller
 {
     //
     public function test() {
-        $startDate = Date::create(2020, 1, 1);
-        $endDate = now();
-        $result = $this->getStock('000001.SZ', $startDate, $endDate);
+//        $startDate = Date::create(2020, 1, 1);
+//        $endDate = now();
+//        $result = $this->getStock('000001.SZ', $startDate, $endDate);
+//
+//        $allClose = $result->pluck('close')->toArray();
+////        dd($allClose);
+//        $ma5_t =trader_ma($allClose, 5);
+//        $macd5 = trader_macd($allClose, 5);
+//
+//        dd($ma5_t, $macd5);
 
-        $allClose = $result->pluck('close')->toArray();
-//        dd($allClose);
-        $ma5_t =trader_ma($allClose, 5);
-        $macd5 = trader_macd($allClose, 5);
-
-        dd($ma5_t, $macd5);
+         $this->lookBackTest(now()->subMonths(3), now());
     }
 
     public function  getStock($tz_code, $startDate, $endDate) {
@@ -35,6 +39,10 @@ class StockController extends Controller
 
     //-----------回测
     function lookBackTest($startDate, $endDate) {
+        $strategy = new DefaultStockStrategy();
+        $runner = new StrategyRunContainer($startDate, $endDate, $strategy);
+        $strategy->setRunContainer($runner);
+        $runner->run();
 
     }
 }

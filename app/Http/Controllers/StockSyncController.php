@@ -134,11 +134,17 @@ class StockSyncController extends Controller
         }
     }
 
-    function dealOneStockFQ($client,Stock $stock) {
-        $lastStockRecord = $stock->stockDailies()->orderBy("trade_date")->first();
+    function syncStockFQWeek() {
+        $allStocks = Stock::all();
+        $client = new TushareClient();
+        foreach ($allStocks as $key => $stock) {
+            Log::info("index: {$key} update stock daily symbol:{$stock->symbol} name:{$stock->name}");
+            $this->dealOneStockFQ($client, $stock);
+        }
+    }
 
-        $startDate = $lastStockRecord->trade_date;
-        $result = $client->stockFQ($stock->ts_code, null, $startDate, null);
+    function dealOneStockFQ($client,Stock $stock) {
+        $result = $client->stockFQ($stock->ts_code, null, now()->subWeek(), null);
 
         if ($result["code"] != 0) {
             Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Http\Controllers\StockSyncController;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class UpdateStockDayliyAll extends Command
 {
@@ -39,12 +40,18 @@ class UpdateStockDayliyAll extends Command
     public function handle()
     {
         //
+//        $week = $this->option("week");
+//        Log::info("schedule --- week:{$week}");
+//        return;
+
         $week = $this->option("week");
         $ssc = new StockSyncController();
         if ($week) {
             $ssc->syncStockDailyWeek();
+            $ssc->syncStockFQWeek();
         } else {
             $ssc->syncStockDailyAll();
+            $ssc->syncStockFQ();
         }
     }
 }

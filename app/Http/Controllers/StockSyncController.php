@@ -75,18 +75,34 @@ class StockSyncController extends Controller
            $allStocks = Stock::all();
            $client = new TushareClient();
            foreach ($allStocks as $stock) {
+               $this->counterDelayCounter("stock");
                $result = $client->stockDaily($stock->ts_code);
                $this->dealOneStockDaily($result, $stock);
            }
     }
 
+    private $delayCounter = [];
+
     function syncStockDailyWeek() {
         $allStocks = Stock::all();
         $client = new TushareClient();
         foreach ($allStocks as $stock) {
+            $this->counterDelayCounter("stock");
             $result = $client->stockDaily($stock->ts_code, null, now()->subDays(7)->format("Ymd"), now()->format("Ymd"));
             $this->dealOneStockDaily($result, $stock);
         }
+    }
+
+    public function counterDelayCounter($key) {
+
+        $timeStr = now()->format("YmdHi");
+        $counter = $this->delayCounter[$key][$timeStr] ?? 0;
+        if ($counter > 450) {
+            sleep(40);
+            return;
+        }
+        $counter += 1;
+        $this->delayCounter[$key][$timeStr] = $counter;
     }
 
     private function dealOneStockDaily($data, $stock) {
@@ -129,6 +145,7 @@ class StockSyncController extends Controller
         $allStocks = Stock::all();
         $client = new TushareClient();
         foreach ($allStocks as $key => $stock) {
+            $this->counterDelayCounter("fq");
             Log::info("index: {$key} update stock daily symbol:{$stock->symbol} name:{$stock->name}");
             $this->dealOneStockFQ($client, $stock);
         }
@@ -138,6 +155,7 @@ class StockSyncController extends Controller
         $allStocks = Stock::all();
         $client = new TushareClient();
         foreach ($allStocks as $key => $stock) {
+            $this->counterDelayCounter("fq");
             Log::info("index: {$key} update stock daily symbol:{$stock->symbol} name:{$stock->name}");
             $this->dealOneStockFQ($client, $stock);
         }

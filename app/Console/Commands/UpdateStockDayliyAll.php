@@ -47,6 +47,12 @@ class UpdateStockDayliyAll extends Command
         $week = $this->option("week");
         $ssc = new StockSyncController();
         if ($week) {
+
+            if (now()->isWeekend()) {
+                Log::info("周末不需要拉取");
+                return;
+            }
+
             $ssc->syncStockDailyWeek();
             $ssc->syncStockFQWeek();
         } else {

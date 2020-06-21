@@ -4,17 +4,24 @@
 namespace App\StockStrategies;
 
 
+use App\Models\Stock;
+
 class DefaultStockStrategy
 {
 
     private $runContainer;
 
 //    public $needTecs = [StockTecIndex::create(StockTecIndex::MACD)];
+
+    //初始 资金
+    public $initMoney = 100000;
+
     public $needTecsParams = [
         [StockTecIndex::MACD, []],
+        [StockTecIndex::RSI, [6]],
+        [StockTecIndex::RSI, [12]],
         [StockTecIndex::MA, [5]],
         [StockTecIndex::MA, [10]],
-        [StockTecIndex::RSI, [6]],
     ];
 
     public $needTecs = [];
@@ -22,6 +29,8 @@ class DefaultStockStrategy
     public $shouldPreDays = 0;
     public function __construct()
     {
+
+        // 计算如果计算技术指标需要提前的行情时间
        foreach ($this->needTecsParams as $param) {
            $tecIndex = StockTecIndex::create($param[0], $param[1]);
            $this->needTecs[] = $tecIndex;
@@ -32,6 +41,10 @@ class DefaultStockStrategy
     }
 
     public function ensureStockPool() {
+
+//        $stockPools = Stock::take(100)->get();
+//        return $stockPools->pluck('ts_code')->toArray();
+//        dd($stockPools->toArray());
 
         return [
             "000001.SZ",
@@ -56,42 +69,18 @@ class DefaultStockStrategy
     public function openQuotation($date) {
 
 //        dd($date->format('Ymd'));
+//        $ts_code, $trade_date, $hands,
+//        $this->runContainer->buy("000001.SZ", $date, 10);
+//        dd($this->runContainer->stockAccount->tradeLogs,$this->runContainer->stockAccount->shippingSpace);
     }
 
+    private $buyPlan = [];
 
     public function closeQuotation($date) {
-        $datas = $this->runContainer->stockDailyDate["002216.SZ"];
-        $info = $datas[count($datas) - 2];
-        $fq_last = $info->fq_factor;
-        $close_prices = $this->runContainer->stockDailyDate["002216.SZ"]->map(function ($v) use($fq_last){
-            $d = $v->only(["close", "trade_date", "fq_factor"]);
-            $d["close"] = round($d["fq_factor"] / $fq_last * $d["close"], 6);
-            return $d;
-        });
 
-        $closes = $close_prices->pluck("close")->toArray();
-        tec_macd($closes);
-        var_dump(1);
-//        $ema12 = trader_ema($closes, 12);
-//        $ema26 = trader_ema($closes, 26);
-//        $diff = [];
-//        foreach ($ema26 as $key => $i) {
-//            $diff[$key] = round($ema12[$key] - $i, 6);
-//        }
-//        $a = trader_ema($diff, 9);
-//        $diffValues = array_values($diff);
-////        dd($a, $m_1);
-//        $macd = [];
-//        foreach ($a as $key => $i) {
-//            $macd[$key + 25] = round(2*($diffValues[$key] - $i), 6);
-//        }
-//
-//        $pr = [];
-//        $d = $close_prices->pluck("trade_date");
-//        foreach ($macd as $key => $i) {
-//            $pr[] = [round($i, 2) ,$d[$key]];
-//        }
-//        dd($pr);
+        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, 20200331, 10));
+        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, $date->format("Ymd")));
+        dd($this->runContainer->stockTecData);
     }
 
 }

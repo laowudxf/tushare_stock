@@ -97,8 +97,8 @@ class StockSyncController extends Controller
 
         $timeStr = now()->format("YmdHi");
         $counter = $this->delayCounter[$key][$timeStr] ?? 0;
-        if ($counter > 450) {
-            sleep(40);
+        if ($counter > 400) {
+            sleep(4);
             return;
         }
         $counter += 1;

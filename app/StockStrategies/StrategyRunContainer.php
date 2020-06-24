@@ -49,6 +49,8 @@ class StrategyRunContainer
             $this->strategy->openQuotation($date);
             $this->strategy->closeQuotation($date);
         }
+        dd($this->strategy->buyPoint);
+
 //        while ($datePoint < $this->endDate) {
 ////            var_dump($datePoint->format("Ymd"));
 //            $this->strategy->openQuotation($datePoint);

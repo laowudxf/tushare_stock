@@ -76,11 +76,44 @@ class DefaultStockStrategy
 
     private $buyPlan = [];
 
+    public $buyPoint = [];
     public function closeQuotation($date) {
 
-        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, 20200331, 10));
-        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, $date->format("Ymd")));
-        dd($this->runContainer->stockTecData);
+        $stocks = $this->ensureStockPool();
+        foreach ($stocks as $stock) {
+            $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
+            $isBuyPoint = $this->isMACDBuyDot($result);
+            if ($isBuyPoint) {
+                $this->buyPoint[] = [$date->format('Ymd'), $stock];
+            }
+        }
+//        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, 20200331, 10));
+//        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, $date->format("Ymd")));
+//        dd($this->runContainer->stockTecData);
+    }
+
+    public function isMACDBuyDot(array $result) {
+
+        if (empty($result)) {
+            return false;
+        }
+
+        //都小于 0
+        foreach ($result as $r) {
+            if ($r > 0) {
+                return false;
+            }
+        }
+
+        if ($result[0] > $result[count($result) - 1]) {
+            return false;
+        }
+
+        if ($result[count($result) - 1] < -0.05) {
+            return false;
+        }
+
+        return true;
     }
 
 }

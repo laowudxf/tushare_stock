@@ -18,10 +18,10 @@ class DefaultStockStrategy
 
     public $needTecsParams = [
         [StockTecIndex::MACD, []],
-        [StockTecIndex::RSI, [6]],
-        [StockTecIndex::RSI, [12]],
-        [StockTecIndex::MA, [5]],
-        [StockTecIndex::MA, [10]],
+//        [StockTecIndex::RSI, [6]],
+//        [StockTecIndex::RSI, [12]],
+//        [StockTecIndex::MA, [5]],
+//        [StockTecIndex::MA, [10]],
     ];
 
     public $needTecs = [];
@@ -42,14 +42,15 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-//        $stockPools = Stock::take(100)->get();
-//        return $stockPools->pluck('ts_code')->toArray();
+        $stockPools = Stock::take(100)->get();
+        return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
         return [
             "000001.SZ",
             "000002.SZ",
             "002216.SZ",
+            "002547.SZ",
         ];
     }
 
@@ -82,9 +83,12 @@ class DefaultStockStrategy
         $stocks = $this->ensureStockPool();
         foreach ($stocks as $stock) {
             $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
+            if ($result == null) {
+                continue;
+            }
             $isBuyPoint = $this->isMACDBuyDot($result);
             if ($isBuyPoint) {
-                $this->buyPoint[] = [$date->format('Ymd'), $stock];
+                $this->buyPoint[$stock][] = $date->format('Ymd');
             }
         }
 //        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, 20200331, 10));
@@ -109,7 +113,7 @@ class DefaultStockStrategy
             return false;
         }
 
-        if ($result[count($result) - 1] < -0.05) {
+        if ($result[count($result) - 1] < -0.03) {
             return false;
         }
 

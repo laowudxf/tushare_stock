@@ -37,7 +37,10 @@ class StrategyRunContainer
 
     function run(){
         $this->stockCodePool = $this->strategy->ensureStockPool();
+        $t_start = msectime();
         $this->initData();
+        $t_end = msectime();
+        dd($t_end - $t_start);
 //        $datePoint = $this->startDate->copy();
 
         $client = new TushareClient();
@@ -162,6 +165,9 @@ class StrategyRunContainer
     }
 
     public function tecIndexSlice($ts_code, $tecIndex, $trade_date, $preCount = 5) {
+        if (isset($this->stockTecData[$ts_code]) == false) {
+            return null;
+        }
        $tecIndex = $this->stockTecData[$ts_code][$tecIndex];
       $tradeDateIndex = array_search($trade_date, array_keys($tecIndex));
       $preDateIndex = $tradeDateIndex - ($preCount - 1);

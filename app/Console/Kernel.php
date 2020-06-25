@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command(UpdateStockDayliyAll::class, ["--week"])->dailyAt("16:30");
+        $schedule->command(UpdateStockDayliyAll::class, ["--week"])->dailyAt("16:00");
     }
 
     /**

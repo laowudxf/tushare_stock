@@ -177,7 +177,7 @@ class StockSyncController extends Controller
             $count = count($items);
             $endDate = $items[$count - 1];
 
-            $result = $client->stockFQ($stock->ts_code, null, $startDate, $endDate[1]);
+            $result = $client->stockFQ($stock->ts_code, null, null, $endDate[1]);
 
             if ($result["code"] != 0) {
                 Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");

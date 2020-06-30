@@ -52,7 +52,7 @@ class StrategyRunContainer
             $this->strategy->openQuotation($date);
             $this->strategy->closeQuotation($date);
         }
-        dd($this->strategy->buyPoint);
+        dd($this->strategy->buyPoint, 1);
 
 //        while ($datePoint < $this->endDate) {
 ////            var_dump($datePoint->format("Ymd"));
@@ -119,14 +119,10 @@ class StrategyRunContainer
                 $this->stockTecData[$stock->ts_code][$key] = $aa;
             }
 
-//            dd($this->stockCloses);
-
-//            dd($stockDays->toArray());
         }
-//        dd($this->stockDailyData);
-//        dd($this->stockTecData, $startTradeDate);
     }
 
+    // public functions
     //-------- trade
 
     public function buy($ts_code, $trade_date, $hands = null, $price = null) {
@@ -185,4 +181,7 @@ class StrategyRunContainer
 
     }
 
+    public  function stockDailyInfo($ts_code, $date) {
+       dd($this->stockDailyData[$ts_code]);
+    }
 }

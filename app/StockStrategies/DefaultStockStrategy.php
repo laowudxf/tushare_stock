@@ -42,15 +42,15 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::take(100)->get();
-        return $stockPools->pluck('ts_code')->toArray();
+//        $stockPools = Stock::take(100)->get();
+//        return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
         return [
             "000001.SZ",
-            "000002.SZ",
-            "002216.SZ",
-            "002547.SZ",
+//            "000002.SZ",
+//            "002216.SZ",
+//            "002547.SZ",
         ];
     }
 
@@ -89,11 +89,15 @@ class DefaultStockStrategy
             $isBuyPoint = $this->isMACDBuyDot($result);
             if ($isBuyPoint) {
                 $this->buyPoint[$stock][] = $date->format('Ymd');
+                $this->calcNextFewDaysProfit($stock, $date->format('Ymd'));
             }
         }
 //        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, 20200331, 10));
 //        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, $date->format("Ymd")));
 //        dd($this->runContainer->stockTecData);
+    }
+
+    public function calcNextFewDaysProfit($ts_code, $date, $nextFewDay = 3) {
     }
 
     public function isMACDBuyDot(array $result) {

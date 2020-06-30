@@ -40,7 +40,7 @@ class StrategyRunContainer
         $t_start = msectime();
         $this->initData();
         $t_end = msectime();
-        dd($t_end - $t_start);
+        // dd($t_end - $t_start);
 //        $datePoint = $this->startDate->copy();
 
         $client = new TushareClient();
@@ -105,6 +105,9 @@ class StrategyRunContainer
             $closes = array_values($close_prices);
             foreach ($this->strategy->needTecs as $key => $needTec) {
                 $d = $needTec->deal($closes);
+                if ($d == null) {
+                    continue;
+                }
 //                dd($d, $realDateIndex, $close_prices);
                 $a = array_filter($d, function ($key) use ($realDateIndex) {
                         return $key >= $realDateIndex - 5;
@@ -166,6 +169,9 @@ class StrategyRunContainer
 
     public function tecIndexSlice($ts_code, $tecIndex, $trade_date, $preCount = 5) {
         if (isset($this->stockTecData[$ts_code]) == false) {
+            return null;
+        }
+        if (isset($this->stockTecData[$ts_code][$tecIndex]) == false) {
             return null;
         }
        $tecIndex = $this->stockTecData[$ts_code][$tecIndex];

@@ -18,10 +18,10 @@ class DefaultStockStrategy
 
     public $needTecsParams = [
         [StockTecIndex::MACD, []],
-//        [StockTecIndex::RSI, [6]],
-//        [StockTecIndex::RSI, [12]],
-//        [StockTecIndex::MA, [5]],
-//        [StockTecIndex::MA, [10]],
+    //    [StockTecIndex::RSI, [6]],
+    //    [StockTecIndex::RSI, [12]],
+    //    [StockTecIndex::MA, [5]],
+    //    [StockTecIndex::MA, [10]],
     ];
 
     public $needTecs = [];
@@ -42,8 +42,8 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::take(100)->get();
-        return $stockPools->pluck('ts_code')->toArray();
+        // $stockPools = Stock::all();
+        // return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
         return [
@@ -82,7 +82,7 @@ class DefaultStockStrategy
 
         $stocks = $this->ensureStockPool();
         foreach ($stocks as $stock) {
-            $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
+            $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 6);
             if ($result == null) {
                 continue;
             }
@@ -109,11 +109,26 @@ class DefaultStockStrategy
             }
         }
 
+        $last = null;
+        foreach ($result as $r) {
+            if ($last == null) {
+                $last = $r;
+                continue;
+            }
+            if ($r < $last) {
+                return false;
+            }
+            $last = $r;
+        }
+        if ($result[0] > -0.3) {
+            return false;
+        } 
+
         if ($result[0] > $result[count($result) - 1]) {
             return false;
         }
 
-        if ($result[count($result) - 1] < -0.03) {
+        if ($result[count($result) - 1] < -0.01 &&  $result[count($result) - 1] < 0.1) {
             return false;
         }
 

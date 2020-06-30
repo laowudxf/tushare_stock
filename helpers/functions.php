@@ -11,6 +11,9 @@ if (!function_exists('tec_macd')) {
         $ema12 = trader_ema($closes, 12);
         $ema26 = trader_ema($closes, 26);
         $diff = [];
+        if (is_array($ema26) == false) {
+            return null;
+        }
         foreach ($ema26 as $key => $i) {
             $diff[$key] = round($ema12[$key] - $i, 6);
         }
@@ -18,6 +21,9 @@ if (!function_exists('tec_macd')) {
         $diffValues = array_values($diff);
 //        dd($a, $m_1);
         $macd = [];
+        if (is_array($a) == false) {
+            return null;
+        }
         foreach ($a as $key => $i) {
             $macd[$key + 25] = round(2*($diffValues[$key] - $i), 6);
         }

@@ -24,7 +24,7 @@ class StockController extends Controller
 //
 //        dd($ma5_t, $macd5);
 
-         $this->lookBackTest(now()->subDays(2), now());
+         $this->lookBackTest(now()->subDays(3), now());
     }
 
     public function  getStock($tz_code, $startDate, $endDate) {

@@ -5,6 +5,7 @@ namespace App\Console;
 use App\Console\Commands\CheckMatureOrder;
 use App\Console\Commands\SettlementOrder;
 use App\Console\Commands\UpdateStockDayliyAll;
+use App\Console\Commands\UpdateTradeDates;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -28,6 +29,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command(UpdateStockDayliyAll::class, ["--week"])->dailyAt("16:00");
+        $schedule->command(UpdateTradeDates::class, ["--week"])->dailyAt("15:30");
     }
 
     /**

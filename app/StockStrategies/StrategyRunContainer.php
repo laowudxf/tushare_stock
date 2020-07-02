@@ -7,6 +7,7 @@ namespace App\StockStrategies;
 use App\Client\TushareClient;
 use App\Models\Stock;
 use App\Models\StockDaily;
+use App\Models\TradeDate;
 use Carbon\Carbon;
 use Carbon\Traits\Date;
 use Illuminate\Support\Facades\Log;
@@ -37,35 +38,38 @@ class StrategyRunContainer
 
     function run(){
         $this->stockCodePool = $this->strategy->ensureStockPool();
-        $t_start = msectime();
+//        $t_start = msectime();
         $this->initData();
-        $t_end = msectime();
-        // dd($t_end - $t_start);
+//        $t_end = msectime();
+//         dd($t_end - $t_start);
 //        $datePoint = $this->startDate->copy();
 
-        $client = new TushareClient();
-        $tradeDates = $client->tradeDates($this->startDate->format("Ymd"), $this->endDate->format("Ymd"));
-        $tradeDates = Collect($tradeDates["data"]["items"])->pluck(1);
+        $tradeDates = TradeDate::dates($this->startDate->format("Ymd"), $this->endDate->format("Ymd"))->get();
+        $tradeDates = $tradeDates->pluck('trade_date');
 
         foreach ($tradeDates as $tradeDate) {
             $date = Carbon::createFromFormat("Ymd", $tradeDate);
             $this->strategy->openQuotation($date);
             $this->strategy->closeQuotation($date);
         }
-        dd($this->strategy->buyPoint, 1);
+        foreach ($this->strategy->buyPoint as &$item){
+            $item = Collect($item)->sortByDesc(function ($v){
+                return $v["profit"][1];
+            })->toArray();
+        }
 
-//        while ($datePoint < $this->endDate) {
-////            var_dump($datePoint->format("Ymd"));
-//            $this->strategy->openQuotation($datePoint);
-//            $this->strategy->closeQuotation($datePoint);
-//            $datePoint = $datePoint->addDays(1);
-//        };
+        $flatten = Collect($this->strategy->buyPoint)->flatten(1);
+
+        //打印结果
+        dd( "涨:".$flatten->where('profit.1', '>', 0)->count(),
+            "跌:".$flatten->where('profit.1', '<', 0)->count(),
+            $this->strategy->buyPoint);
+        return $this->strategy->buyPoint;
 
     }
 
     function initData() {
         $stocks = Stock::whereIn('ts_code', $this->stockCodePool)->get();
-//        dd($stocks->toArray());
         $preDays = $this->strategy->shouldPreDays;
         foreach ($stocks as $stock) {
             $stockDays  =  StockDaily::where(["stock_id" => $stock->id])
@@ -97,19 +101,18 @@ class StrategyRunContainer
 
             //计算技术指标
             $closesAndDate = $stockDays->pluck('close', 'trade_date');
-//            $closes = $closesAndDate->values()->toArray();
             $dates = $closesAndDate->keys()->toArray();
             $realDateIndex = array_search($startTradeDate, $dates);
 
             $this->stockCloses[$stock->ts_code] = $close_prices;
             $closes = array_values($close_prices);
             foreach ($this->strategy->needTecs as $key => $needTec) {
-                $d = $needTec->deal($closes);
+                $dealedDate = $needTec->deal($closes, $realDateIndex, $dates);
                 if ($d == null) {
                     continue;
                 }
-//                dd($d, $realDateIndex, $close_prices);
                 $a = array_filter($d, function ($key) use ($realDateIndex) {
+                            //-5 为了留一点技术指标提前量，方便对比。
                         return $key >= $realDateIndex - 5;
                 }, ARRAY_FILTER_USE_KEY);
                 $aa = [];
@@ -125,6 +128,13 @@ class StrategyRunContainer
     // public functions
     //-------- trade
 
+    /***
+     * @param $ts_code
+     * @param $trade_date
+     * @param null $hands
+     * @param null $price
+     * @return int|void
+     */
     public function buy($ts_code, $trade_date, $hands = null, $price = null) {
         $dailyData = $this->stockDailyData[$ts_code];
         if ($trade_date instanceof Carbon) {
@@ -163,6 +173,13 @@ class StrategyRunContainer
 
     }
 
+    /***
+     * @param $ts_code
+     * @param $tecIndex
+     * @param $trade_date
+     * @param int $preCount
+     * @return array|null
+     */
     public function tecIndexSlice($ts_code, $tecIndex, $trade_date, $preCount = 5) {
         if (isset($this->stockTecData[$ts_code]) == false) {
             return null;
@@ -181,7 +198,35 @@ class StrategyRunContainer
 
     }
 
-    public  function stockDailyInfo($ts_code, $date) {
-       dd($this->stockDailyData[$ts_code]);
+    /***
+     * @param $ts_code
+     * @param $date
+     * @return mixed
+     */
+    public function stockDailyInfo($ts_code, $date) {
+       return $this->stockDailyData[$ts_code]->firstWhere('trade_date', $date);
+    }
+
+    /***
+     * @param $ts_code
+     * @param $date
+     * @param int $period
+     * @return array|null
+     */
+    public function profitForNextDays($ts_code, $date, $period = 3) {
+        $day1 = TradeDate::where('trade_date', $date)->first();
+        $day2 = TradeDate::find($day1->id + $period);
+        if ($day2 == null) {
+            return null;
+        }
+        $stock1 = $this->stockDailyInfo($ts_code, $day1->trade_date);
+        $stock2 = $this->stockDailyInfo($ts_code, $day2->trade_date);
+        if ($stock2 == null || $stock1 == null) {
+            return null;
+        }
+
+        $closeOff = $stock2->close - $stock1->close;
+        $percent = $closeOff / $stock1->close;
+        return [$closeOff, round($percent, 2)];
     }
 }

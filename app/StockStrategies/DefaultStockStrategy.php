@@ -9,7 +9,7 @@ use App\Models\Stock;
 class DefaultStockStrategy
 {
 
-    private $runContainer;
+    private  $runContainer;
 
 //    public $needTecs = [StockTecIndex::create(StockTecIndex::MACD)];
 
@@ -17,7 +17,8 @@ class DefaultStockStrategy
     public $initMoney = 100000;
 
     public $needTecsParams = [
-        [StockTecIndex::MACD, []],
+//        [StockTecIndex::MACD, []],
+        [StockTecIndex::BOLL, []],
     //    [StockTecIndex::RSI, [6]],
     //    [StockTecIndex::RSI, [12]],
     //    [StockTecIndex::MA, [5]],
@@ -42,8 +43,8 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        // $stockPools = Stock::all();
-        // return $stockPools->pluck('ts_code')->toArray();
+//         $stockPools = Stock::limit(100)->get();
+//         return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
         return [
@@ -77,6 +78,7 @@ class DefaultStockStrategy
 
     private $buyPlan = [];
 
+    //tmp
     public $buyPoint = [];
     public function closeQuotation($date) {
 
@@ -88,17 +90,15 @@ class DefaultStockStrategy
             }
             $isBuyPoint = $this->isMACDBuyDot($result);
             if ($isBuyPoint) {
-                $this->buyPoint[$stock][] = $date->format('Ymd');
-                $this->calcNextFewDaysProfit($stock, $date->format('Ymd'));
+                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
+                $this->buyPoint[$stock][] = [
+                    "date" =>  $date->format('Ymd'),
+                    "profit" => $result
+                ];
             }
         }
-//        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, 20200331, 10));
-//        dd($this->runContainer->stockTecData, $this->runContainer->tecIndexSlice("000001.SZ", 0, $date->format("Ymd")));
-//        dd($this->runContainer->stockTecData);
     }
 
-    public function calcNextFewDaysProfit($ts_code, $date, $nextFewDay = 3) {
-    }
 
     public function isMACDBuyDot(array $result) {
 
@@ -113,6 +113,7 @@ class DefaultStockStrategy
             }
         }
 
+        //递减
         $last = null;
         foreach ($result as $r) {
             if ($last == null) {
@@ -124,14 +125,17 @@ class DefaultStockStrategy
             }
             $last = $r;
         }
+
+
         if ($result[0] > -0.3) {
             return false;
-        } 
+        }
 
         if ($result[0] > $result[count($result) - 1]) {
             return false;
         }
 
+        //金叉
         if ($result[count($result) - 1] < -0.01 &&  $result[count($result) - 1] < 0.1) {
             return false;
         }

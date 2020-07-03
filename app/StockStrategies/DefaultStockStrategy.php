@@ -43,14 +43,14 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-//         $stockPools = Stock::limit(100)->get();
-//         return $stockPools->pluck('ts_code')->toArray();
+         $stockPools = Stock::limit(20)->get();
+         return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
         return [
-//            "000001.SZ",
-//            "000002.SZ",
-//            "002216.SZ",
+            "000001.SZ",
+            "000002.SZ",
+            "002216.SZ",
             "002547.SZ",
         ];
     }
@@ -85,13 +85,14 @@ class DefaultStockStrategy
         $stocks = $this->ensureStockPool();
         foreach ($stocks as $stock) {
             $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
-            if ($result == null) {
+            $bollTec = $this->runContainer->tecIndexSlice($stock, 1, $date->format("Ymd"), 4, true);
+            if ($result == null || $bollTec == null) {
                 continue;
             }
 
-            $isBuyPoint = $this->isMACDBuyDot($result);
+            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
             if ($isBuyPoint) {
-                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
+                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 4);
                 $this->buyPoint[$stock][] = [
                     "date" =>  $date->format('Ymd'),
                     "profit" => $result
@@ -99,7 +100,6 @@ class DefaultStockStrategy
             }
         }
     }
-
 
     public function isMACDBuyDot(array $result) {
 
@@ -115,33 +115,44 @@ class DefaultStockStrategy
         }
 
         //递减
-//        $last = null;
-//        foreach ($result as $r) {
-//            if ($last == null) {
-//                $last = $r;
-//                continue;
-//            }
-//            if ($r < $last) {
-//                return false;
-//            }
-//            $last = $r;
-//        }
-
-
-        if ($result[0] > -0.3) {
-            return false;
+        $last = null;
+        foreach ($result as $r) {
+            if ($last == null) {
+                $last = $r;
+                continue;
+            }
+            if ($r < $last) {
+                return false;
+            }
+            $last = $r;
         }
+
+
+//        if ($result[0] > -0.1) {
+//            return false;
+//        }
 
         if ($result[0] > $result[count($result) - 1]) {
             return false;
         }
 
         //金叉
-        if ($result[count($result) - 1] < -0.1 &&  $result[count($result) - 1] < 0.2) {
+        if ($result[count($result) - 1] < -0.03 &&  $result[count($result) - 1] < 0.1) {
             return false;
         }
 
         return true;
     }
 
+    public function isAscendingChannel(array $result) {
+       return $this->bollMidSlope($result) > 0.008;
+    }
+
+    public function bollMidSlope(array $result) {
+        $midArr = $result[1];
+        $a = $midArr[0];
+        $b = $midArr[count($midArr) - 1];
+        $slope = ($b - $a) / $a;
+        return $slope;
+    }
 }

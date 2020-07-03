@@ -92,7 +92,6 @@ class StrategyRunContainer
 
             $info = $stockDays[count($stockDays) - 1];
             $fq_last = $info->fq_factor;
-            dd($stockDays->toArray());
             $close_prices = $stockDays->map(function ($v) use($fq_last){
                 $d = $v->only(["close", "trade_date", "fq_factor"]);
                 $d["close"] = round($d["fq_factor"] / $fq_last * $d["close"], 6);
@@ -170,7 +169,7 @@ class StrategyRunContainer
      * @param int $preCount
      * @return array|null
      */
-    public function tecIndexSlice($ts_code, $tecIndex, $trade_date, $preCount = 5) {
+    public function tecIndexSlice($ts_code, $tecIndex, $trade_date, $preCount = 5, $isBoll = false) {
         if (isset($this->stockTecData[$ts_code]) == false) {
             return null;
         }
@@ -178,13 +177,27 @@ class StrategyRunContainer
             return null;
         }
        $tecIndex = $this->stockTecData[$ts_code][$tecIndex];
-      $tradeDateIndex = array_search($trade_date, array_keys($tecIndex));
-      $preDateIndex = $tradeDateIndex - ($preCount - 1);
-      if ($preDateIndex < 0) {
-          $preCount += $preDateIndex;
-          $preDateIndex = 0;
+      if ($isBoll == false) {
+          $tradeDateIndex = array_search($trade_date, array_keys($tecIndex));
+          $preDateIndex = $tradeDateIndex - ($preCount - 1);
+          if ($preDateIndex < 0) {
+              $preCount += $preDateIndex;
+              $preDateIndex = 0;
+          }
+          return array_slice($tecIndex, $preDateIndex, $preCount);
+      } else {
+          $result = [];
+          foreach ($tecIndex as $key => $item) {
+              $tradeDateIndex = array_search($trade_date, array_keys($item));
+              $preDateIndex = $tradeDateIndex - ($preCount - 1);
+              if ($preDateIndex < 0) {
+                  $preCount += $preDateIndex;
+                  $preDateIndex = 0;
+              }
+              $result[$key] = array_slice($item, $preDateIndex, $preCount);
+          }
+          return $result;
       }
-      return array_slice($tecIndex, $preDateIndex, $preCount);
 
     }
 
@@ -205,6 +218,10 @@ class StrategyRunContainer
      */
     public function profitForNextDays($ts_code, $date, $period = 3) {
         $day1 = TradeDate::where('trade_date', $date)->first();
+        $day1 = TradeDate::find($day1->id + 1);
+        if ($day1 == null) {
+            return null;
+        }
         $day2 = TradeDate::find($day1->id + $period);
         if ($day2 == null) {
             return null;
@@ -215,8 +232,8 @@ class StrategyRunContainer
             return null;
         }
 
-        $closeOff = $stock2->close - $stock1->close;
-        $percent = $closeOff / $stock1->close;
+        $closeOff = $stock2->close - $stock1->open;
+        $percent = $closeOff / $stock1->open;
         return [$closeOff, round($percent, 2)];
     }
 }

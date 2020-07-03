@@ -46,34 +46,54 @@ class StockTecIndex
 
        switch ($this->tecIndex) {
            case self::MACD:
-               return tec_macd($datas);
+               return $this->insertDate( tec_macd($datas), $realDateIndex, $dates);
                break;
            case self::RSI:
-               return trader_rsi($datas, ...$this->period);
+               return $this->insertDate( trader_rsi($datas, ...$this->period), $realDateIndex, $dates);
                break;
            case self::MA:
-               return trader_ma($datas, ...$this->period);
+               return $this->insertDate( trader_ma($datas, ...$this->period), $realDateIndex, $dates);
                break;
            case self::BOLL:
 //               $r = trader_bbands($datas, 20, 2, 2);
 //               dd($r);
-               return trader_bbands($datas, 20, 2, 2);
+               return $this->insertDate(trader_bbands($datas, 20, 2, 2), $realDateIndex, $dates);
                break;
        }
     }
 
     private function insertDate($result, $realDateIndex, $dates) {
-
         if ($result == null) {
-            null;
+            return null;
         }
-        $a = array_filter($result, function ($key) use ($realDateIndex) {
-            //-5 为了留一点技术指标提前量，方便对比。
-            return $key >= $realDateIndex - 5;
-        }, ARRAY_FILTER_USE_KEY);
-        $aa = [];
-        foreach ($a as $k => $value) {
-            $aa[$dates[$k]] = $value;
+
+        switch ($this->tecIndex) {
+            case self::MACD:
+            case self::RSI:
+            case self::MA:
+                $a = array_filter($result, function ($key) use ($realDateIndex) {
+                    //-5 为了留一点技术指标提前量，方便对比。
+                    return $key >= $realDateIndex - 5;
+                }, ARRAY_FILTER_USE_KEY);
+                $aa = [];
+                foreach ($a as $k => $value) {
+                    $aa[$dates[$k]] = $value;
+                }
+                return $aa;
+            case self::BOLL:
+                $aaa = [];
+                foreach ($result as $key => $item) {
+                    $a = array_filter($item, function ($key) use ($realDateIndex) {
+                        //-5 为了留一点技术指标提前量，方便对比。
+                        return $key >= $realDateIndex - 5;
+                    }, ARRAY_FILTER_USE_KEY);
+                    $aa = [];
+                    foreach ($a as $k => $value) {
+                        $aa[$dates[$k]] = $value;
+                    }
+                    $aaa[$key] = $aa;
+                }
+                return $aaa;
         }
     }
 

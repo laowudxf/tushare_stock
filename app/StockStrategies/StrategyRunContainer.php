@@ -92,12 +92,12 @@ class StrategyRunContainer
 
             $info = $stockDays[count($stockDays) - 1];
             $fq_last = $info->fq_factor;
+            dd($stockDays->toArray());
             $close_prices = $stockDays->map(function ($v) use($fq_last){
                 $d = $v->only(["close", "trade_date", "fq_factor"]);
                 $d["close"] = round($d["fq_factor"] / $fq_last * $d["close"], 6);
                 return $d;
             })->pluck('close', 'trade_date')->toArray();
-//            dd($close_prices);
 
             //计算技术指标
             $closesAndDate = $stockDays->pluck('close', 'trade_date');
@@ -107,20 +107,10 @@ class StrategyRunContainer
             $this->stockCloses[$stock->ts_code] = $close_prices;
             $closes = array_values($close_prices);
             foreach ($this->strategy->needTecs as $key => $needTec) {
-                $dealedDate = $needTec->deal($closes, $realDateIndex, $dates);
-                if ($d == null) {
-                    continue;
-                }
-                $a = array_filter($d, function ($key) use ($realDateIndex) {
-                            //-5 为了留一点技术指标提前量，方便对比。
-                        return $key >= $realDateIndex - 5;
-                }, ARRAY_FILTER_USE_KEY);
-                $aa = [];
-                foreach ($a as $k => $value) {
-                   $aa[$dates[$k]] = $value;
-                }
-                $this->stockTecData[$stock->ts_code][$key] = $aa;
+                $result = $needTec->deal($closes, $realDateIndex, $dates);
+                $this->stockTecData[$stock->ts_code][$key] = $result;
             }
+//            dd($this->stockTecData);
 
         }
     }

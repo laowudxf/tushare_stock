@@ -157,12 +157,12 @@ class StockSyncController extends Controller
         foreach ($allStocks as $key => $stock) {
             $this->counterDelayCounter("fq");
             Log::info("index: {$key} update stock daily symbol:{$stock->symbol} name:{$stock->name}");
-            $this->dealOneStockFQ($client, $stock);
+            $this->dealOneStockFQ($client, $stock, true);
         }
     }
 
-    function dealOneStockFQ($client,Stock $stock) {
-        $result = $client->stockFQ($stock->ts_code, null, now()->subWeek(), null);
+    function dealOneStockFQ($client,Stock $stock, $isWeek = false) {
+        $result = $client->stockFQ($stock->ts_code, null, $isWeek ? now()->subWeek(): null, null);
 
         if ($result["code"] != 0) {
             Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");

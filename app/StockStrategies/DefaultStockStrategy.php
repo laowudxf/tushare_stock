@@ -17,7 +17,7 @@ class DefaultStockStrategy
     public $initMoney = 100000;
 
     public $needTecsParams = [
-//        [StockTecIndex::MACD, []],
+        [StockTecIndex::MACD, []],
         [StockTecIndex::BOLL, []],
     //    [StockTecIndex::RSI, [6]],
     //    [StockTecIndex::RSI, [12]],
@@ -48,10 +48,10 @@ class DefaultStockStrategy
 //        dd($stockPools->toArray());
 
         return [
-            "000001.SZ",
+//            "000001.SZ",
 //            "000002.SZ",
 //            "002216.SZ",
-//            "002547.SZ",
+            "002547.SZ",
         ];
     }
 
@@ -84,10 +84,11 @@ class DefaultStockStrategy
 
         $stocks = $this->ensureStockPool();
         foreach ($stocks as $stock) {
-            $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 6);
+            $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
             if ($result == null) {
                 continue;
             }
+
             $isBuyPoint = $this->isMACDBuyDot($result);
             if ($isBuyPoint) {
                 $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
@@ -114,17 +115,17 @@ class DefaultStockStrategy
         }
 
         //递减
-        $last = null;
-        foreach ($result as $r) {
-            if ($last == null) {
-                $last = $r;
-                continue;
-            }
-            if ($r < $last) {
-                return false;
-            }
-            $last = $r;
-        }
+//        $last = null;
+//        foreach ($result as $r) {
+//            if ($last == null) {
+//                $last = $r;
+//                continue;
+//            }
+//            if ($r < $last) {
+//                return false;
+//            }
+//            $last = $r;
+//        }
 
 
         if ($result[0] > -0.3) {
@@ -136,7 +137,7 @@ class DefaultStockStrategy
         }
 
         //金叉
-        if ($result[count($result) - 1] < -0.01 &&  $result[count($result) - 1] < 0.1) {
+        if ($result[count($result) - 1] < -0.1 &&  $result[count($result) - 1] < 0.2) {
             return false;
         }
 

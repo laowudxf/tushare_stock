@@ -53,7 +53,9 @@ class StrategyRunContainer
             $this->strategy->closeQuotation($date);
         }
         foreach ($this->strategy->buyPoint as &$item){
-            $item = Collect($item)->sortByDesc(function ($v){
+            $item = Collect($item)->filter(function($v){
+                    return $v["profit"] != null;
+            })->sortByDesc(function ($v){
                 return $v["profit"][1];
             })->toArray();
         }

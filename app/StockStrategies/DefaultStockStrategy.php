@@ -43,7 +43,7 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-         $stockPools = Stock::limit(20)->get();
+         $stockPools = Stock::limit(500)->get();
          return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
@@ -92,7 +92,7 @@ class DefaultStockStrategy
 
             $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
             if ($isBuyPoint) {
-                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 4);
+                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 7);
                 $this->buyPoint[$stock][] = [
                     "date" =>  $date->format('Ymd'),
                     "profit" => $result
@@ -145,7 +145,7 @@ class DefaultStockStrategy
     }
 
     public function isAscendingChannel(array $result) {
-       return $this->bollMidSlope($result) > 0.008 && $this->bollUpSlope($result) > 0;
+       return $this->bollMidSlope($result) > 0.02 && $this->bollUpSlope($result) > 0;
     }
 
     public function bollMidSlope(array $result) {

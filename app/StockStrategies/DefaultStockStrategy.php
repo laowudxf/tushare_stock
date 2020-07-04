@@ -43,8 +43,8 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-//         $stockPools = Stock::limit(20)->get();
-//         return $stockPools->pluck('ts_code')->toArray();
+        $stockPools = Stock::limit(50)->get();
+        return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
         return [
@@ -83,16 +83,16 @@ class DefaultStockStrategy
     public function closeQuotation($date) {
 
         $stocks = $this->ensureStockPool();
-        foreach ($stocks as $stock) {
+        foreach ($stocks as $key => $stock) {
             $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
             $bollTec = $this->runContainer->tecIndexSlice($stock, 1, $date->format("Ymd"), 5, true);
             if ($result == null || $bollTec == null) {
                 continue;
             }
 
-//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
-//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
-            $isBuyPoint = $this->isMACDBottomRebound($result);
+        //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
+        //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
+            $isBuyPoint = ($this->bollMidSlope($bollTec) < 0) && $this->isMACDBottomRebound($result);
             if ($isBuyPoint) {
                 $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
                 $this->buyPoint[$stock][] = [

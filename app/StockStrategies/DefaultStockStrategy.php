@@ -47,12 +47,12 @@ class DefaultStockStrategy
         return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
-        return [
-            "000001.SZ",
-            "000002.SZ",
-            "002216.SZ",
-            "002547.SZ",
-        ];
+//        return [
+//            "000001.SZ",
+//            "000002.SZ",
+//            "002216.SZ",
+//            "002547.SZ",
+//        ];
     }
 
 

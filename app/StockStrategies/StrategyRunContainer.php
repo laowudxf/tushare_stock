@@ -27,6 +27,8 @@ class StrategyRunContainer
     public $stockDailyData = [];
     public $stockCloses = [];
     public $stockTecData = [];
+//    public $showProfit = true;
+    public $showProfit = false;
 
     public function __construct(Carbon $startDate,Carbon $endDate, DefaultStockStrategy $strategy)
     {
@@ -52,20 +54,27 @@ class StrategyRunContainer
             $this->strategy->openQuotation($date);
             $this->strategy->closeQuotation($date);
         }
-        foreach ($this->strategy->buyPoint as &$item){
-            $item = Collect($item)->filter(function($v){
+
+        if ($this->showProfit) {
+            foreach ($this->strategy->buyPoint as &$item){
+                $item = Collect($item)->filter(function($v){
                     return $v["profit"] != null;
-            })->sortByDesc(function ($v){
-                return $v["profit"][1];
-            })->toArray();
+                })->sortByDesc(function ($v){
+                    return $v["profit"][1];
+                })->toArray();
+            }
         }
 
         $flatten = Collect($this->strategy->buyPoint)->flatten(1);
 
         //打印结果
-        dd( "涨:".$flatten->where('profit.1', '>', 0)->count(),
-            "跌:".$flatten->where('profit.1', '<', 0)->count(),
-            $this->strategy->buyPoint);
+        if ($this->showProfit) {
+            dd( "涨:".$flatten->where('profit.1', '>', 0)->count(),
+                "跌:".$flatten->where('profit.1', '<', 0)->count(),
+                $this->strategy->buyPoint);
+        } else {
+            dd($this->strategy->buyPoint);
+        }
         return $this->strategy->buyPoint;
 
     }

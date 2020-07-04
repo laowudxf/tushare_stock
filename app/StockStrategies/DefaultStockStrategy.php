@@ -43,8 +43,8 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-         $stockPools = Stock::limit(500)->get();
-         return $stockPools->pluck('ts_code')->toArray();
+//         $stockPools = Stock::limit(20)->get();
+//         return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
         return [
@@ -85,14 +85,16 @@ class DefaultStockStrategy
         $stocks = $this->ensureStockPool();
         foreach ($stocks as $stock) {
             $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
-            $bollTec = $this->runContainer->tecIndexSlice($stock, 1, $date->format("Ymd"), 4, true);
+            $bollTec = $this->runContainer->tecIndexSlice($stock, 1, $date->format("Ymd"), 5, true);
             if ($result == null || $bollTec == null) {
                 continue;
             }
 
-            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
+//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
+//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
+            $isBuyPoint = $this->isMACDBottomRebound($result);
             if ($isBuyPoint) {
-                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 7);
+                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
                 $this->buyPoint[$stock][] = [
                     "date" =>  $date->format('Ymd'),
                     "profit" => $result
@@ -101,19 +103,66 @@ class DefaultStockStrategy
         }
     }
 
+    public function isMACDBottomRebound(array $result) {
+        if (empty($result)) {
+            return false;
+        }
+
+        $max = null;
+
+        foreach ($result as $key => $item) {
+            if ($max == null) {
+                $max = [$key, $item];
+                continue;
+            }
+
+            //判断都小于0
+            if ($item >= 0) {
+                return false;
+            }
+
+            if ($item < $max[1]) {
+                $max = [$key, $item];
+            }
+        }
+
+        //若最高的不是倒数第二个则不符合
+        if ($max[0] != count($result) - 2) {
+           return false;
+        }
+
+        //最高的之前是递减的
+        $last = null;
+        foreach ($result as $key => $r) {
+            if ($key >= $max[0]) {
+                break;
+            }
+            if ($last == null) {
+                $last = $r;
+                continue;
+            }
+            if ($r > $last) {
+                return false;
+            }
+            $last = $r;
+        }
+
+        return true;
+
+    }
+
+    //金叉
     public function isMACDBuyDot(array $result) {
 
         if (empty($result)) {
             return false;
         }
-
         //都小于 0
         foreach ($result as $r) {
             if ($r > 0) {
                 return false;
             }
         }
-
         //递减
         $last = null;
         foreach ($result as $r) {
@@ -126,16 +175,12 @@ class DefaultStockStrategy
             }
             $last = $r;
         }
-
-
 //        if ($result[0] > -0.1) {
 //            return false;
 //        }
-
         if ($result[0] > $result[count($result) - 1]) {
             return false;
         }
-
         //金叉
         if ($result[count($result) - 1] < -0.03 &&  $result[count($result) - 1] < 0.1) {
             return false;
@@ -145,7 +190,7 @@ class DefaultStockStrategy
     }
 
     public function isAscendingChannel(array $result) {
-       return $this->bollMidSlope($result) > 0.02 && $this->bollUpSlope($result) > 0;
+       return $this->bollMidSlope($result) > 0 && $this->bollUpSlope($result) > 0;
     }
 
     public function bollMidSlope(array $result) {

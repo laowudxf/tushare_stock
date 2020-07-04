@@ -145,14 +145,22 @@ class DefaultStockStrategy
     }
 
     public function isAscendingChannel(array $result) {
-       return $this->bollMidSlope($result) > 0.008;
+       return $this->bollMidSlope($result) > 0.008 && $this->bollUpSlope($result) > 0;
     }
 
     public function bollMidSlope(array $result) {
-        $midArr = $result[1];
+        return $this->bollSlope($result, 1);
+    }
+
+    public function bollSlope(array $result, $type) {
+        $midArr = $result[$type];
         $a = $midArr[0];
         $b = $midArr[count($midArr) - 1];
         $slope = ($b - $a) / $a;
         return $slope;
+    }
+
+    public function bollUpSlope(array $result) {
+        return $this->bollSlope($result, 0);
     }
 }

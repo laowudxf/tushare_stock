@@ -43,14 +43,14 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-//        $stockPools = Stock::limit(50)->get();
-//        return $stockPools->pluck('ts_code')->toArray();
-//        dd($stockPools->toArray());
+        $stockPools = Stock::limit(50)->get();
+        return $stockPools->pluck('ts_code')->toArray();
+        dd($stockPools->toArray());
 
         return [
-//            "000001.SZ",
-//            "000002.SZ",
-//            "002216.SZ",
+            "000001.SZ",
+            "000002.SZ",
+            "002216.SZ",
             "002547.SZ",
         ];
     }
@@ -116,7 +116,7 @@ class DefaultStockStrategy
         //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
         //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
 //            dd($this->bollMidSlope($bollTec, $dateFormat), $dateFormat, $stock);
-            $isBuyPoint = ($this->bollUpSlope($bollTec) > 0) && $this->isMACDBottomRebound($result);
+            $isBuyPoint = ($this->bollUpSlope($bollTec) > 1) && $this->isMACDBottomRebound($result);
             if ($isBuyPoint) {
                 $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
                 $this->buyPoint[$stock][] = [

@@ -43,16 +43,16 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(50)->get();
-        return $stockPools->pluck('ts_code')->toArray();
+//        $stockPools = Stock::limit(50)->get();
+//        return $stockPools->pluck('ts_code')->toArray();
 //        dd($stockPools->toArray());
 
-//        return [
+        return [
 //            "000001.SZ",
 //            "000002.SZ",
 //            "002216.SZ",
-//            "002547.SZ",
-//        ];
+            "002547.SZ",
+        ];
     }
 
 
@@ -74,6 +74,27 @@ class DefaultStockStrategy
 //        $ts_code, $trade_date, $hands,
 //        $this->runContainer->buy("000001.SZ", $date, 10);
 //        dd($this->runContainer->stockAccount->tradeLogs,$this->runContainer->stockAccount->shippingSpace);
+        $account = $this->runContainer->stockAccount;
+
+        //卖出
+       foreach ($account->shippingSpace as $key => $items) {
+           foreach ($items as $item) {
+//               dd($date->format("Ymd"), $this->runContainer->nextTradeDays($item["date"], 4)->trade_date);
+               if ($date->format("Ymd") < $this->runContainer->nextTradeDays($item["date"], 4)->trade_date) {
+                   continue; //先持有三天
+               }
+
+               $this->runContainer->sell($key, $date, $item["hand"]);
+//                   dd($date, $this->runContainer->stockAccount->tradeLogs, $this->runContainer->stockAccount->shippingSpace);
+           }
+       }
+
+        //买入
+        if (empty($this->buyPlan) || $account->money < 3000) {
+            return;
+        }
+        $this->runContainer->buy($this->buyPlan[0]["stock"], $date, null, $account->money);
+
     }
 
     private $buyPlan = [];
@@ -81,23 +102,31 @@ class DefaultStockStrategy
     //tmp
     public $buyPoint = [];
     public function closeQuotation($date) {
+        $this->buyPlan = [];
 
         $stocks = $this->ensureStockPool();
+        $dateFormat = $date->format("Ymd");
         foreach ($stocks as $key => $stock) {
             $result = $this->runContainer->tecIndexSlice($stock, 0, $date->format("Ymd"), 5);
-            $bollTec = $this->runContainer->tecIndexSlice($stock, 1, $date->format("Ymd"), 5, true);
+            $bollTec = $this->runContainer->tecIndexSlice($stock, 1, $date->format("Ymd"), 1, true);
             if ($result == null || $bollTec == null) {
                 continue;
             }
 
         //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
         //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
-            $isBuyPoint = ($this->bollMidSlope($bollTec) < 0) && $this->isMACDBottomRebound($result);
+//            dd($this->bollMidSlope($bollTec, $dateFormat), $dateFormat, $stock);
+            $isBuyPoint = ($this->bollUpSlope($bollTec) > 0) && $this->isMACDBottomRebound($result);
             if ($isBuyPoint) {
                 $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
                 $this->buyPoint[$stock][] = [
                     "date" =>  $date->format('Ymd'),
-                    "profit" => $result
+                    "profit" => $result,
+                    "slope" => $this->bollUpSlope($bollTec)
+                ];
+
+                $this->buyPlan[] = [
+                    "stock" => $stock
                 ];
             }
         }
@@ -198,11 +227,8 @@ class DefaultStockStrategy
     }
 
     public function bollSlope(array $result, $type) {
-        $midArr = $result[$type];
-        $a = $midArr[0];
-        $b = $midArr[count($midArr) - 1];
-        $slope = ($b - $a) / $a;
-        return $slope;
+         $r = $result[$type + 3];
+         return $r[0] ?? null;
     }
 
     public function bollUpSlope(array $result) {

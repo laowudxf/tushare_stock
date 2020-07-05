@@ -27,8 +27,8 @@ class StrategyRunContainer
     public $stockDailyData = [];
     public $stockCloses = [];
     public $stockTecData = [];
-//    public $showProfit = true;
-    public $showProfit = false;
+    public $showProfit = true;
+//    public $showProfit = false;
 
     public function __construct(Carbon $startDate,Carbon $endDate, DefaultStockStrategy $strategy)
     {
@@ -67,6 +67,7 @@ class StrategyRunContainer
 
         $flatten = Collect($this->strategy->buyPoint)->flatten(1);
 
+//        dd($this->stockAccount->tradeLogs, $this->stockAccount->shippingSpace);
         //打印结果
         if ($this->showProfit) {
             dd( "涨:".$flatten->where('profit.1', '>', 0)->count(),
@@ -82,9 +83,10 @@ class StrategyRunContainer
     function initData() {
         $stocks = Stock::whereIn('ts_code', $this->stockCodePool)->get();
         $preDays = $this->strategy->shouldPreDays;
+        $newStartDay = $this->startDate->copy()->subDays($preDays >= 200 ? 200: $preDays * 2);
         foreach ($stocks as $stock) {
             $stockDays  =  StockDaily::where(["stock_id" => $stock->id])
-                ->where('trade_date', '>=', $this->startDate->copy()->subDays($preDays * 2)->format("Ymd"))
+                ->where('trade_date', '>=', $newStartDay->format("Ymd"))
                 ->where('trade_date', '<=', $this->endDate->format("Ymd"))->get();
             $startStockDaily = StockDaily::where(["stock_id" => $stock->id])
                 ->where('trade_date', '>=', $this->startDate->format("Ymd"))->first();
@@ -127,6 +129,43 @@ class StrategyRunContainer
 
     // public functions
     //-------- trade
+    public function sell($ts_code, $trade_date, $hands = null){
+        $dailyData = $this->stockDailyData[$ts_code];
+        if ($trade_date instanceof Carbon) {
+            $trade_date = $trade_date->format("Ymd");
+        }
+        $dayDate = $dailyData->firstWhere('trade_date', $trade_date);
+        if ($dayDate == null) {
+            log::warning("当天没有开盘数据 ts_code:{$ts_code}, 无法卖出");
+            return -1;
+        }
+
+        if ($hands) {
+//            $needMoney = ($dayDate->open * $hands * 100) * $this->rate;
+//            if ($this->stockAccount->money < $needMoney) {
+//                log::warning("资金不够 {$this->stockAccount->money}, need {$needMoney}, ts_code:{$ts_code}, 无法购买");
+//                return -2;
+//            }
+            $this->stockAccount->sell($ts_code, $trade_date, $hands, $dayDate->open);
+            return 0;
+        }
+
+//        if ($price) {
+//            $hands = intval($price / $dayDate->open / 100);
+//            if ($hands == 0) {
+//                log::warning("资金不够 {$this->stockAccount->money}, ts_code:{$ts_code}, 无法购买");
+//                return -2;
+//            }
+//            $needMoney = ($dayDate->open * $hands * 100) * $this->rate;
+//            if ($this->stockAccount->money < $needMoney) {
+//                log::warning("资金不够 {$this->stockAccount->money}, need {$needMoney}, ts_code:{$ts_code}, 无法购买");
+//                return -2;
+//            }
+//            $this->stockAccount->buy($ts_code, $trade_date, $hands, $needMoney, $dayDate->open);
+//            return 0;
+//        }
+    }
+
 
     /***
      * @param $ts_code
@@ -153,11 +192,11 @@ class StrategyRunContainer
                 return -2;
             }
             $this->stockAccount->buy($ts_code, $trade_date, $hands, $needMoney, $dayDate->open);
-            return;
+            return 0;
         }
 
         if ($price) {
-            $hands = ($price / $dayDate->open / 100) % 1 ;
+            $hands = intval($price / $dayDate->open / 100);
             if ($hands == 0) {
                 log::warning("资金不够 {$this->stockAccount->money}, ts_code:{$ts_code}, 无法购买");
                 return -2;
@@ -168,7 +207,7 @@ class StrategyRunContainer
                 return -2;
             }
             $this->stockAccount->buy($ts_code, $trade_date, $hands, $needMoney, $dayDate->open);
-            return;
+            return 0;
         }
 
     }
@@ -221,6 +260,11 @@ class StrategyRunContainer
        return $this->stockDailyData[$ts_code]->firstWhere('trade_date', $date);
     }
 
+    public function nextTradeDays($date, $count = 1) {
+        $day1 = TradeDate::where('trade_date', $date)->first();
+        $day1 = TradeDate::find($day1->id + $count);
+        return $day1;
+    }
     /***
      * @param $ts_code
      * @param $date
@@ -228,8 +272,9 @@ class StrategyRunContainer
      * @return array|null
      */
     public function profitForNextDays($ts_code, $date, $period = 3) {
-        $day1 = TradeDate::where('trade_date', $date)->first();
-        $day1 = TradeDate::find($day1->id + 1);
+//        $day1 = TradeDate::where('trade_date', $date)->first();
+//        $day1 = TradeDate::find($day1->id + 1);
+        $day1 = $this->nextTradeDays($date);
         if ($day1 == null) {
             return null;
         }

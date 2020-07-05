@@ -21,3 +21,6 @@ Route::get("hello", function (\App\Repository\Facade\RDS\RDS $rds) {
 
 Route::get('test', "StockController@test");
 
+Route::get('stock', function () {
+    return \App\Models\Stock::all();
+});

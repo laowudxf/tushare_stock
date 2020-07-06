@@ -19,7 +19,7 @@ class DefaultStockStrategy
     public $needTecsParams = [
         [StockTecIndex::MACD, []],
         [StockTecIndex::BOLL, []],
-    //    [StockTecIndex::RSI, [6]],
+//        [StockTecIndex::RSI, [6]],
     //    [StockTecIndex::RSI, [12]],
     //    [StockTecIndex::MA, [5]],
     //    [StockTecIndex::MA, [10]],
@@ -43,7 +43,7 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(50)->get();
+        $stockPools = Stock::limit(100)->get();
         return $stockPools->pluck('ts_code')->toArray();
         dd($stockPools->toArray());
 

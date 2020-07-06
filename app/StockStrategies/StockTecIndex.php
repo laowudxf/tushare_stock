@@ -94,52 +94,22 @@ class StockTecIndex
                     $slopeArr = [];
                     $firstKey = -1;
 
-                    $min = [];
-                    $max = [];
+                    $window = [];
                     foreach ($a as $k => $value) {
                         //处理slope
                         $slope = null;
                         if ($firstKey == -1) {
-                            $min[] = $value;
-                            $max[] = $value;
                             $firstKey = $k;
-                        } else {
-                            $lastMin = $this->arrayLast($min);
-                            $lastMax = $this->arrayLast($max);
-                            if ($lastMin && $value < $lastMin) {
-                                $min[] = $value;
-                            } else if ($lastMax && $value > $lastMax) {
-                                $max[] = $value;
-                            }
                         }
+                        $window[] = $value;
 
                         if (($k - $firstKey) == $macdSlopePreDay) {
-                            $v = $a[$firstKey];
+                            array_shift($window);
                             $firstKey += 1;
-                            $lastMin = $this->arrayLast($min);
-                            $lastMax = $this->arrayLast($max);
-
-                            if ($v == $lastMin) {
-                                array_pop($min);
-                            } else if ($v == $lastMax) {
-                                array_pop($max);
-                            }
-                            $lastMin = $this->arrayLast($min);
-                            $lastMax = $this->arrayLast($max);
-
-                            if ($lastMax == null) {
-                                $max[] = array_shift($min);
-                                $lastMax = $this->arrayLast($max);
-                            }
-
-                            if ($lastMin == null) {
-                                $min[] = array_shift($max);
-                                $lastMin = $this->arrayLast($min);
-                            }
-
                             $diff = 0;
                             if ($key == 0) { // upper
-                                $diff = $lastMax - $lastMin;
+                                list($min, $max) = $this->findMaxMin($window);
+                                $diff = $max - $min;
                                 $diffArr[$k] = $diff;
                             } else {
                                 $diff = $diffArr[$k];
@@ -148,9 +118,6 @@ class StockTecIndex
                                 if (isset($a[$k - 1])) {
                                     $last = $a[$k - 1];
                                     $slope = ($value - $last) * $scale;
-//                                    if ($k == 285) {
-//                                        dd($slope, ($value - $last) * $scale, $scale);
-//                                    }
                                 }
                         }
                         //-------处理slope
@@ -165,6 +132,35 @@ class StockTecIndex
                 return $aaa;
         }
     }
+
+    function findMaxMin($array) {
+        $min = null;
+        $max = null;
+        foreach ($array as $key => $item) {
+            if ($key == 0) {
+                $min = $item;
+                $max = $item;
+                continue;
+            }
+
+            if ($item < $min) {
+                $min = $item;
+            }
+            if ($item > $max) {
+                $max = $item;
+            }
+        }
+
+        return [$min, $max];
+    }
+
+    function arrayFirst(array $array) {
+        if (count($array) == 0) {
+            return null;
+        }
+
+        return $array[0];
+    }
     function arrayLast(array $array) {
        if (count($array) == 0) {
            return null;
@@ -172,6 +168,8 @@ class StockTecIndex
 
        return $array[count($array) - 1];
     }
+
+
 }
 
 

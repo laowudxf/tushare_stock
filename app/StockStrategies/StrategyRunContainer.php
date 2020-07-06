@@ -40,10 +40,10 @@ class StrategyRunContainer
 
     function run(){
         $this->stockCodePool = $this->strategy->ensureStockPool();
-//        $t_start = msectime();
+        $t_start = msectime();
         $this->initData();
-//        $t_end = msectime();
-//         dd($t_end - $t_start);
+        $t_end = msectime();
+         dd($t_end - $t_start);
 //        $datePoint = $this->startDate->copy();
 
         $tradeDates = TradeDate::dates($this->startDate->format("Ymd"), $this->endDate->format("Ymd"))->get();

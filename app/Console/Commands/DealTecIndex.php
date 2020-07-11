@@ -45,7 +45,7 @@ class DealTecIndex extends Command
     {
         //
         $strategy = new DailyDealStrategy();
-        $runner = new StrategyRunContainer(now()->subYears(10), now(), $strategy);
+        $runner = new StrategyRunContainer(now()->subYears(1), now(), $strategy);
         $strategy->setRunContainer($runner);
         $runner->stockCodePool = $strategy->ensureStockPool();
 //        $t_start = msectime();
@@ -72,6 +72,7 @@ class DealTecIndex extends Command
             $this->info("正在处理第{$index}条 {$key}");
             $index += 1;
             StockTec::insert($insertDatas);
+            $insertDatas = [];
         }
     }
 }

@@ -86,23 +86,20 @@ class StrategyRunContainer
         $preDays = $this->strategy->shouldPreDays;
         $newStartDay = $this->startDate->copy()->subDays($preDays >= 200 ? 200: $preDays * 2);
         foreach ($stocks as $stock) {
-            $r =  StockTec::generateTecData($stock, $this->startDate->format("Ymd"), $this->endDate->format("Ymd"));
-            $this->stockTecData[$stock->ts_code] = $r;
             $stockDays = StockDaily::where(["stock_id" => $stock->id])
                 ->where('trade_date', '>=', $newStartDay->format("Ymd"))
                 ->where('trade_date', '<=', $this->endDate->format("Ymd"))->get();
-//            $startStockDaily = StockDaily::where(["stock_id" => $stock->id])
-//                ->where('trade_date', '>=', $this->startDate->format("Ymd"))->first();
-//            try {
-//
-//                $startTradeDate = $startStockDaily->trade_date;
-//            } catch (\Exception $exception) {
-////                dd($startStockDaily, $stock);
-//                continue;
-//            }
+            $startStockDaily = StockDaily::where(["stock_id" => $stock->id])
+                ->where('trade_date', '>=', $this->startDate->format("Ymd"))->first();
+            try {
+
+                $startTradeDate = $startStockDaily->trade_date;
+            } catch (\Exception $exception) {
+//                dd($startStockDaily, $stock);
+                continue;
+            }
 
             $this->stockDailyData[$stock->ts_code] = $stockDays;
-            continue;
 
 
             //计算复权

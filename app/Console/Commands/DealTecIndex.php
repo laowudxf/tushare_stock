@@ -45,7 +45,7 @@ class DealTecIndex extends Command
     {
         //
         $strategy = new DailyDealStrategy();
-        $runner = new StrategyRunContainer(now()->subYears(1), now(), $strategy);
+        $runner = new StrategyRunContainer(now()->subYears(2), now(), $strategy);
         $strategy->setRunContainer($runner);
         $runner->stockCodePool = $strategy->ensureStockPool();
 //        $t_start = msectime();
@@ -55,6 +55,9 @@ class DealTecIndex extends Command
         StockTec::where('id', '>', 0)->delete();
         $index = 0;
         foreach ($tecs as $key => $value) {
+            if (empty($value[0])) {
+                continue;
+            }
             $dates = array_keys($value[0]);
             foreach ($dates as $date) {
                 $insertDatas[] = [

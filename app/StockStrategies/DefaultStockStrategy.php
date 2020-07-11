@@ -43,7 +43,7 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(100)->get();
+        $stockPools = Stock::limit(5)->get();
         return $stockPools->pluck('ts_code')->toArray();
         dd($stockPools->toArray());
 

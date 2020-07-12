@@ -17,6 +17,17 @@ class StockAccount
     {
         $this->money = $money;
     }
+
+    public function allPropertyMoney() {
+        $stockMoney = 0;
+       foreach ($this->shippingSpace as $space) {
+           foreach ($space as $item) {
+              $stockMoney += $item["unit_cost"] * $item["hand"];
+           }
+       }
+       return $stockMoney + $this->money;
+    }
+
     public function avgPrice($ts_code) {
         if (isset($this->shippingSpace[$ts_code]) == false) {
             return null;

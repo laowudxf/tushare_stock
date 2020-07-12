@@ -70,19 +70,20 @@ class StrategyRunContainer
 
         $flatten = Collect($this->strategy->buyPoint)->flatten(1);
 
+
         if ($this->isLookBackTest) {
 //        dd($this->stockAccount->tradeLogs, $this->stockAccount->shippingSpace);
-            Log::info("tradeLogs", $this->stockAccount->tradeLogs);
-            Log::info("shippingSpace", $this->stockAccount->shippingSpace);
+            Log::info($this->stockAccount->tradeLogs);
+            Log::info($this->stockAccount->allPropertyMoney());
         }
         //打印结果
         if ($this->showProfit) {
-            Log::info("涨:".$flatten->where('profit.1', '>', 0)->count(),
+            dd("涨:".$flatten->where('profit.1', '>', 0)->count(),
                 "跌:".$flatten->where('profit.1', '<', 0)->count(),
                 $this->strategy->buyPoint);
         } else {
 //            dd($this->strategy->buyPoint);
-            Log::Info("buyPoint: ", $this->strategy->buyPoint);
+            dd($this->strategy->buyPoint);
         }
         return $this->strategy->buyPoint;
 

@@ -100,7 +100,7 @@ class DefaultStockStrategy
        }
 
         //买入
-        if (empty($this->buyPlan) || $account->money < 3000) {
+        if (empty($this->buyPlan) || $account->money < 20000) {
             return;
         }
 

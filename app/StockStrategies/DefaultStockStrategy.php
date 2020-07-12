@@ -14,7 +14,7 @@ class DefaultStockStrategy
 //    public $needTecs = [StockTecIndex::create(StockTecIndex::MACD)];
 
     //初始 资金
-    public $initMoney = 100000;
+    public $initMoney = 200000;
 
     public $needTecsParams = [
         [StockTecIndex::MACD, []],
@@ -43,7 +43,7 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(50)->get();
+        $stockPools = Stock::limit(500)->get();
         $stockPools = $stockPools->filter(function ($v){
             return strstr($v->name, "ST") == null;
         });
@@ -86,16 +86,16 @@ class DefaultStockStrategy
                    continue; //先持有三天
                }
 
-               list($isProfit, $profitPercent) = $this->runContainer->stockAccount->isStockProfit($key, $date->format("Ymd"));
-               if ($isProfit == null) {
-                   continue;
-               }
+               $this->runContainer->sell($key, $date, $item["hand"]);
 
-               if ($isProfit > 0) {
-//                   var_dump($isProfit);
-                   $this->runContainer->sell($key, $date, $item["hand"]);
-               }
-//                   dd($date, $this->runContainer->stockAccount->tradeLogs, $this->runContainer->stockAccount->shippingSpace);
+//               list($isProfit, $profitPercent) = $this->runContainer->stockAccount->isStockProfit($key, $date->format("Ymd"));
+//               if ($isProfit == null) {
+//                   continue;
+//               }
+//
+//               if ($isProfit > 0) {
+//                   $this->runContainer->sell($key, $date, $item["hand"]);
+//               }
            }
        }
 
@@ -103,7 +103,16 @@ class DefaultStockStrategy
         if (empty($this->buyPlan) || $account->money < 3000) {
             return;
         }
-        $this->runContainer->buy($this->buyPlan[0]["stock"], $date, null, $account->money);
+
+        $limitBuyPlan = $this->buyPlan;
+        if(count($this->buyPlan) > 10) {
+            $limitBuyPlan = array_slice($this->buyPlan, 0, 10);
+        }
+
+        $preMoney = $account->money / count($limitBuyPlan);
+        foreach ($limitBuyPlan as $item) {
+            $this->runContainer->buy($item["stock"], $date, null, $preMoney);
+        }
 
     }
 

@@ -69,7 +69,7 @@ class StrategyRunContainer
 
         $flatten = Collect($this->strategy->buyPoint)->flatten(1);
 
-//        dd($this->stockAccount->tradeLogs, $this->stockAccount->shippingSpace);
+        dd($this->stockAccount->tradeLogs, $this->stockAccount->shippingSpace);
         //打印结果
         if ($this->showProfit) {
             dd( "涨:".$flatten->where('profit.1', '>', 0)->count(),

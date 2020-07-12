@@ -11,10 +11,42 @@ class StockAccount
 
 
     public $tradeLogs = [];
+    public $runContainer;
 
     public function __construct($money)
     {
         $this->money = $money;
+    }
+    public function avgPrice($ts_code) {
+        if (isset($this->shippingSpace[$ts_code]) == false) {
+            return null;
+        }
+
+       $records = $this->shippingSpace[$ts_code];
+
+        $hands = 0;
+        $money = 0;
+       foreach ($records as $record) {
+          $hands += $record["hand"];
+          $money += $record["unit_cost"] * $record["hand"];
+       }
+       $avg = $money / $hands;
+       return $avg;
+    }
+
+    public function isStockProfit($ts_code, $date) {
+       $avg = $this->avgPrice($ts_code);
+       if ($avg == null) {
+           return null;
+       }
+        $info = $this->runContainer->stockDailyData[$ts_code]->firstWhere('trade_date', $date);
+       if ($info == null) {
+           return null;
+       }
+        $nowPrice = $info->open;
+        $profitUnit = $nowPrice - $avg;
+        return [$profitUnit > 0, $profitUnit / $avg];
+
     }
     public function sell($ts_code, $trade_date, $hand, $unitCost) {
         $data = $this->shippingSpace[$ts_code];

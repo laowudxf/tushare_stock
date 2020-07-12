@@ -35,6 +35,7 @@ class StrategyRunContainer
     {
         $this->strategy = $strategy;
         $this->stockAccount = new StockAccount($strategy->initMoney);
+        $this->stockAccount->runContainer = $this;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
     }
@@ -125,7 +126,6 @@ class StrategyRunContainer
             }
 
         }
-        dd($this->stockTecData);
     }
 
     // public functions
@@ -202,11 +202,12 @@ class StrategyRunContainer
                 log::warning("资金不够 {$this->stockAccount->money}, ts_code:{$ts_code}, 无法购买");
                 return -2;
             }
-            $needMoney = ($dayDate->open * $hands * 100) * $this->rate;
-            if ($this->stockAccount->money < $needMoney) {
-                log::warning("资金不够 {$this->stockAccount->money}, need {$needMoney}, ts_code:{$ts_code}, 无法购买");
-                return -2;
-            }
+            $needMoney = $hands * 100 * $dayDate->open;
+//            $needMoney = ($dayDate->open * $hands * 100) * $this->rate;
+//            if ($this->stockAccount->money < $needMoney) {
+//                log::warning("资金不够 {$this->stockAccount->money}, need {$needMoney}, ts_code:{$ts_code}, 无法购买");
+//                return -2;
+//            }
             $this->stockAccount->buy($ts_code, $trade_date, $hands, $needMoney, $dayDate->open);
             return 0;
         }

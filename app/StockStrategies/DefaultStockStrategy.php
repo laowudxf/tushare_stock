@@ -43,9 +43,11 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(100)->get();
+        $stockPools = Stock::limit(50)->get();
+        $stockPools = $stockPools->filter(function ($v){
+            return strstr($v->name, "ST") == null;
+        });
         return $stockPools->pluck('ts_code')->toArray();
-        dd($stockPools->toArray());
 
         return [
             "000001.SZ",
@@ -84,7 +86,15 @@ class DefaultStockStrategy
                    continue; //先持有三天
                }
 
-               $this->runContainer->sell($key, $date, $item["hand"]);
+               list($isProfit, $profitPercent) = $this->runContainer->stockAccount->isStockProfit($key, $date->format("Ymd"));
+               if ($isProfit == null) {
+                   continue;
+               }
+
+               if ($isProfit > 0) {
+//                   var_dump($isProfit);
+                   $this->runContainer->sell($key, $date, $item["hand"]);
+               }
 //                   dd($date, $this->runContainer->stockAccount->tradeLogs, $this->runContainer->stockAccount->shippingSpace);
            }
        }
@@ -114,9 +124,9 @@ class DefaultStockStrategy
             }
 
         //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
-        //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
+            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
 //            dd($this->bollMidSlope($bollTec, $dateFormat), $dateFormat, $stock);
-            $isBuyPoint = ($this->bollUpSlope($bollTec) > 1) && $this->isMACDBottomRebound($result);
+//            $isBuyPoint = ($this->bollMidSlope($bollTec) > 1) && $this->isMACDBottomRebound($result);
             if ($isBuyPoint) {
                 $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
                 $this->buyPoint[$stock][] = [
@@ -219,7 +229,8 @@ class DefaultStockStrategy
     }
 
     public function isAscendingChannel(array $result) {
-       return $this->bollMidSlope($result) > 0 && $this->bollUpSlope($result) > 0;
+//       return $this->bollMidSlope($result) > 0 && $this->bollUpSlope($result) > 1;
+        return  $this->bollUpSlope($result) > 1;
     }
 
     public function bollMidSlope(array $result) {

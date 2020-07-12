@@ -29,6 +29,7 @@ class StrategyRunContainer
     public $stockCloses = [];
     public $stockTecData = [];
     public $showProfit = true;
+    public $isLookBackTest = true;
 //    public $showProfit = false;
 
     public function __construct(Carbon $startDate,Carbon $endDate, DefaultStockStrategy $strategy)
@@ -69,14 +70,19 @@ class StrategyRunContainer
 
         $flatten = Collect($this->strategy->buyPoint)->flatten(1);
 
-        dd($this->stockAccount->tradeLogs, $this->stockAccount->shippingSpace);
+        if ($this->isLookBackTest) {
+//        dd($this->stockAccount->tradeLogs, $this->stockAccount->shippingSpace);
+            Log::info("tradeLogs", $this->stockAccount->tradeLogs);
+            Log::info("shippingSpace", $this->stockAccount->shippingSpace);
+        }
         //打印结果
         if ($this->showProfit) {
-            dd( "涨:".$flatten->where('profit.1', '>', 0)->count(),
+            Log::info("涨:".$flatten->where('profit.1', '>', 0)->count(),
                 "跌:".$flatten->where('profit.1', '<', 0)->count(),
                 $this->strategy->buyPoint);
         } else {
-            dd($this->strategy->buyPoint);
+//            dd($this->strategy->buyPoint);
+            Log::Info("buyPoint: ", $this->strategy->buyPoint);
         }
         return $this->strategy->buyPoint;
 
@@ -104,6 +110,10 @@ class StrategyRunContainer
 
 
             //计算复权
+            if (count($stockDays) == 0) {
+                continue;
+            }
+
 
             $info = $stockDays[count($stockDays) - 1];
             $fq_last = $info->fq_factor;

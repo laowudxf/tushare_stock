@@ -29,7 +29,7 @@ class StrategyRunContainer
     public $stockCloses = [];
     public $stockTecData = [];
     public $showProfit = true;
-    public $isLookBackTest = true;
+    public $isLookBackTest = false;
 //    public $showProfit = false;
 
     public function __construct(Carbon $startDate,Carbon $endDate, DefaultStockStrategy $strategy)
@@ -78,15 +78,16 @@ class StrategyRunContainer
         }
         //打印结果
         if ($this->showProfit) {
-            dd("涨:".$flatten->where('profit.1', '>', 0)->count(),
-                "跌:".$flatten->where('profit.1', '<', 0)->count(),
-                $this->strategy->buyPoint);
+            Log::info(["result" => ["涨:".$flatten->where('profit.1', '>', 0)->count(),
+                "跌:".$flatten->where('profit.1', '<', 0)->count()],
+                "buyPoint" => $this->strategy->buyPoint]);
         } else {
-//            dd($this->strategy->buyPoint);
-            dd($this->strategy->buyPoint);
+            //            dd($this->strategy->buyPoint);
+            Log::info($this->strategy->buyPoint);
         }
-        return $this->strategy->buyPoint;
-
+        return ["result" => ["涨:".$flatten->where('profit.1', '>', 0)->count(),
+            "跌:".$flatten->where('profit.1', '<', 0)->count()],
+            "buyPoint" => $this->strategy->buyPoint];
     }
 
     function initData() {

@@ -43,7 +43,7 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(500)->get();
+        $stockPools = Stock::limit(200)->get();
         $stockPools = $stockPools->filter(function ($v){
             return strstr($v->name, "ST") == null;
         });
@@ -72,16 +72,21 @@ class DefaultStockStrategy
      */
     public function openQuotation($date) {
 
-//        dd($date->format('Ymd'));
-//        $ts_code, $trade_date, $hands,
-//        $this->runContainer->buy("000001.SZ", $date, 10);
-//        dd($this->runContainer->stockAccount->tradeLogs,$this->runContainer->stockAccount->shippingSpace);
         $account = $this->runContainer->stockAccount;
 
         //卖出
        foreach ($account->shippingSpace as $key => $items) {
            foreach ($items as $item) {
 //               dd($date->format("Ymd"), $this->runContainer->nextTradeDays($item["date"], 4)->trade_date);
+               list($isProfit, $profitPercent) = $this->runContainer->stockAccount->isStockProfit($key, $date->format("Ymd"));
+               if ($profitPercent != null && $profitPercent < -0.04) { //止损
+                   $this->runContainer->sell($key, $date, $item["hand"]);
+               }
+
+               if ($profitPercent != null && $profitPercent > 0.1) { //止盈
+                   $this->runContainer->sell($key, $date, $item["hand"]);
+               }
+
                if ($date->format("Ymd") < $this->runContainer->nextTradeDays($item["date"], 4)->trade_date) {
                    continue; //先持有三天
                }

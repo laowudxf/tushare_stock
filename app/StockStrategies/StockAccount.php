@@ -22,7 +22,7 @@ class StockAccount
         $stockMoney = 0;
        foreach ($this->shippingSpace as $space) {
            foreach ($space as $item) {
-              $stockMoney += $item["unit_cost"] * $item["hand"];
+              $stockMoney += $item["unit_cost"] * $item["hand"] * 100;
            }
        }
        return $stockMoney + $this->money;

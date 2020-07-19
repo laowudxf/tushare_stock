@@ -43,7 +43,7 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(200)->get();
+        $stockPools = Stock::limit(100)->get();
         $stockPools = $stockPools->filter(function ($v){
             return strstr($v->name, "ST") == null;
         });
@@ -81,13 +81,20 @@ class DefaultStockStrategy
                list($isProfit, $profitPercent) = $this->runContainer->stockAccount->isStockProfit($key, $date->format("Ymd"));
                if ($profitPercent != null && $profitPercent < -0.04) { //止损
                    $this->runContainer->sell($key, $date, $item["hand"]);
+                   continue;
                }
 
                if ($profitPercent != null && $profitPercent > 0.1) { //止盈
                    $this->runContainer->sell($key, $date, $item["hand"]);
+                   continue;
                }
 
-               if ($date->format("Ymd") < $this->runContainer->nextTradeDays($item["date"], 4)->trade_date) {
+               $day = $this->runContainer->nextTradeDays($item["date"], 4);
+               if ($day == null) {
+                   continue;
+               }
+
+               if ($date->format("Ymd") < $day->trade_date) {
                    continue; //先持有三天
                }
 
@@ -110,11 +117,13 @@ class DefaultStockStrategy
         }
 
         $limitBuyPlan = $this->buyPlan;
-        if(count($this->buyPlan) > 10) {
-            $limitBuyPlan = array_slice($this->buyPlan, 0, 10);
+        if(count($this->buyPlan) > 5) {
+            $limitBuyPlan = array_slice($this->buyPlan, 0, 5);
         }
 
-        $preMoney = $account->money / count($limitBuyPlan);
+//        $preMoney = $account->money > 200000 ? 200000: $account->money  / count($limitBuyPlan);
+        $preMoney = $account->money  / count($limitBuyPlan);
+
         foreach ($limitBuyPlan as $item) {
             $this->runContainer->buy($item["stock"], $date, null, $preMoney);
         }
@@ -137,12 +146,12 @@ class DefaultStockStrategy
                 continue;
             }
 
-        //    $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
-            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound($result);
+            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
+//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound_1($result);
 //            dd($this->bollMidSlope($bollTec, $dateFormat), $dateFormat, $stock);
 //            $isBuyPoint = ($this->bollMidSlope($bollTec) > 1) && $this->isMACDBottomRebound($result);
             if ($isBuyPoint) {
-                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3);
+                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 7);
                 $this->buyPoint[$stock][] = [
                     "date" =>  $date->format('Ymd'),
                     "profit" => $result,
@@ -174,9 +183,68 @@ class DefaultStockStrategy
                 return false;
             }
 
+
             if ($item < $max[1]) {
                 $max = [$key, $item];
             }
+        }
+
+        //若最高的不是倒数第二个则不符合
+        if ($max[0] != count($result) - 2) {
+            return false;
+        }
+
+        //最高的之前是递减的
+        $last = null;
+        foreach ($result as $key => $r) {
+            if ($key >= $max[0]) {
+                break;
+            }
+            if ($last == null) {
+                $last = $r;
+                continue;
+            }
+            if ($r > $last) {
+                return false;
+            }
+            $last = $r;
+        }
+
+        return true;
+
+    }
+    public function isMACDBottomRebound_1(array $result) {
+        if (empty($result)) {
+            return false;
+        }
+
+        $max = null;
+
+        $lessZero = true;
+        $bigThanZero = true;
+        foreach ($result as $key => $item) {
+            if ($max == null) {
+                $max = [$key, $item];
+                continue;
+            }
+
+            //判断都小于0
+            if ($item >= 0) {
+                $lessZero = false;
+            }
+
+            if ($item < 0) {
+               $bigThanZero = false;
+            }
+
+
+            if ($item < $max[1]) {
+                $max = [$key, $item];
+            }
+        }
+
+        if ($bigThanZero == false) {
+            return false;
         }
 
         //若最高的不是倒数第二个则不符合
@@ -243,8 +311,9 @@ class DefaultStockStrategy
     }
 
     public function isAscendingChannel(array $result) {
-//       return $this->bollMidSlope($result) > 0 && $this->bollUpSlope($result) > 1;
-        return  $this->bollUpSlope($result) > 1;
+//       return $this->bollMidSlope($result) > 0.5 && $this->bollUpSlope($result) > 1;
+        return $this->bollMidSlope($result) > -0.5;
+//        return  $this->bollUpSlope($result) > 1;
     }
 
     public function bollMidSlope(array $result) {

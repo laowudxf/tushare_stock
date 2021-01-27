@@ -15,7 +15,7 @@ class GenerateStockWeek extends Command
      *
      * @var string
      */
-    protected $signature = 'app:stockWeek';
+    protected $signature = 'app:stockWeek {--week}';
 
     /**
      * The console command description.
@@ -43,9 +43,19 @@ class GenerateStockWeek extends Command
     {
         //
        $allStocks = Stock::all(["id"]);
+       $isWeek = $this->option("week");
        foreach ($allStocks as $index => $stock) {
            $this->info("dealing {$index}");
-          $stockDaily = StockDaily::where('stock_id', $stock->id)->orderBy("trade_date")->get();
+           $stockDaily = null;
+           if ($isWeek == false) {
+               $stockDaily = StockDaily::where('stock_id', $stock->id)->orderBy("trade_date")->get();
+           } else {
+               list($mondayStr, $fridayStr) = $this->calcMondayAndFriday(now()->format("Ymd"));
+               $stockDaily = StockDaily::where('stock_id', $stock->id)
+                   ->where('trade_date', '>=', $mondayStr)
+                   ->where('trade_date', '<=', $fridayStr)
+                   ->orderBy("trade_date")->get();
+           }
            $date = $stockDaily[0]->trade_date;
            list($mondayStr, $fridayStr) = $this->calcMondayAndFriday($date);
            $insertStockWeekData = [];
@@ -66,7 +76,18 @@ class GenerateStockWeek extends Command
            if (empty($weekData) == false) {
                $insertStockWeekData[] = $this->dealWeekData($weekData, $lastClose);
            }
-           StockWeek::insert($insertStockWeekData);
+           if ($isWeek == false) {
+               StockWeek::insert($insertStockWeekData);
+           } else {
+              foreach ($insertStockWeekData as $data) {
+                  $exists = StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->exists();
+                 if($exists) {
+                     StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->update($data);
+                 } else {
+                     StockWeek::create($data);
+                 }
+              }
+           }
        }
     }
 
@@ -94,9 +115,8 @@ class GenerateStockWeek extends Command
     public function calcMondayAndFriday($dateStr) {
 
         $d = Carbon::createFromFormat("Ymd", $dateStr);
-//          dd($d->dayOfWeek);
-        $monday = $d->copy()->subDays($d->dayOfWeek - 1);
-        $friday = $d->copy()->addDays(5 - $d->dayOfWeek);
+        $monday = $d->copy()->subDays($d->dayOfWeekIso - 1);
+        $friday = $d->copy()->addDays(5 - $d->dayOfWeekIso);
         return [$monday->format("Ymd"), $friday->format("Ymd")];
     }
 }

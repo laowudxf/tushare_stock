@@ -68,11 +68,14 @@ class StrategyRunContainer
             }
         }
 
+        $this->dealResult();
+    }
+
+    function dealResult() {
         $flatten = Collect($this->strategy->buyPoint)->flatten(1);
 
 
         if ($this->isLookBackTest) {
-//        dd($this->stockAccount->tradeLogs, $this->stockAccount->shippingSpace);
             Log::info($this->stockAccount->tradeLogs);
             Log::info($this->stockAccount->allPropertyMoney());
         }
@@ -82,12 +85,12 @@ class StrategyRunContainer
                 "跌:".$flatten->where('profit.1', '<', 0)->count()],
                 "buyPoint" => $this->strategy->buyPoint]);
         } else {
-            //            dd($this->strategy->buyPoint);
-//            Log::info($this->strategy->buyPoint);
         }
+
         return ["result" => ["涨:".$flatten->where('profit.1', '>', 0)->count(),
             "跌:".$flatten->where('profit.1', '<', 0)->count()],
             "buyPoint" => $this->strategy->buyPoint];
+
     }
 
     function initData() {

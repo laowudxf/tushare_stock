@@ -66,27 +66,28 @@ class GenerateStockWeek extends Command
                    $weekData[] = $daily;
                } else {
                    if (empty($weekData) == false) {
-                      $insertStockWeekData[] = $this->dealWeekData($weekData,$lastClose);
+                       $insertStockWeekData[] = $this->dealWeekData($weekData,$lastClose);
                    }
                    list($mondayStr, $fridayStr) = $this->calcMondayAndFriday($daily->trade_date);
                    $weekData = [];
                    $weekData[] = $daily;
                }
            }
+
            if (empty($weekData) == false) {
                $insertStockWeekData[] = $this->dealWeekData($weekData, $lastClose);
            }
            if ($isWeek == false) {
                StockWeek::insert($insertStockWeekData);
            } else {
-              foreach ($insertStockWeekData as $data) {
-                  $exists = StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->exists();
-                 if($exists) {
-                     StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->update($data);
-                 } else {
-                     StockWeek::create($data);
-                 }
-              }
+               foreach ($insertStockWeekData as $data) {
+                   $exists = StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->exists();
+                   if($exists) {
+                       StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->update($data);
+                   } else {
+                       StockWeek::create($data);
+                   }
+               }
            }
        }
     }

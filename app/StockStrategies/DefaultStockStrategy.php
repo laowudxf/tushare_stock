@@ -9,9 +9,8 @@ use App\Models\Stock;
 class DefaultStockStrategy
 {
 
-    private  $runContainer;
+    public  $runContainer;
 
-//    public $needTecs = [StockTecIndex::create(StockTecIndex::MACD)];
 
     //初始 资金
     public $initMoney = 200000;
@@ -43,11 +42,11 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-        $stockPools = Stock::limit(100)->get();
-        $stockPools = $stockPools->filter(function ($v){
-            return strstr($v->name, "ST") == null;
-        });
-        return $stockPools->pluck('ts_code')->toArray();
+//        $stockPools = Stock::limit(10)->get();
+//        $stockPools = $stockPools->filter(function ($v){
+//            return strstr($v->name, "ST") == null;
+//        });
+//        return $stockPools->pluck('ts_code')->toArray();
 
         return [
             "000001.SZ",
@@ -130,7 +129,7 @@ class DefaultStockStrategy
 
     }
 
-    private $buyPlan = [];
+    public $buyPlan = [];
 
     //tmp
     public $buyPoint = [];
@@ -272,7 +271,7 @@ class DefaultStockStrategy
 
     }
 
-    //金叉
+    //macd金叉
     public function isMACDBuyDot(array $result) {
 
         if (empty($result)) {
@@ -316,6 +315,11 @@ class DefaultStockStrategy
 //        return  $this->bollUpSlope($result) > 1;
     }
 
+    /**
+     * boll 中位线斜率
+     * @param array $result
+     * @return mixed|null
+     */
     public function bollMidSlope(array $result) {
         return $this->bollSlope($result, 1);
     }
@@ -325,6 +329,12 @@ class DefaultStockStrategy
          return $r[0] ?? null;
     }
 
+    /**
+     * boll 上斜率
+     * @param array $result
+     * @param $type
+     * @return mixed|null
+     */
     public function bollUpSlope(array $result) {
         return $this->bollSlope($result, 0);
     }

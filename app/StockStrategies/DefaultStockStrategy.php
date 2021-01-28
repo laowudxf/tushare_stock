@@ -49,10 +49,7 @@ class DefaultStockStrategy
 //        return $stockPools->pluck('ts_code')->toArray();
 
         return [
-            "000001.SZ",
-            "000002.SZ",
-            "002216.SZ",
-            "002547.SZ",
+            "000725.SZ",
         ];
     }
 
@@ -60,7 +57,7 @@ class DefaultStockStrategy
     /**
      * @param mixed $runContainer
      */
-    public function setRunContainer(StrategyRunContainer $runContainer): void
+    public function setRunContainer($runContainer)
     {
         $this->runContainer = $runContainer;
     }

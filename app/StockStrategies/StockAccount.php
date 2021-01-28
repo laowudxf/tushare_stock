@@ -59,7 +59,7 @@ class StockAccount
         return [$profitUnit > 0, $profitUnit / $avg];
 
     }
-    public function sell($ts_code, $trade_date, $hand, $unitCost) {
+    public function sell($ts_code, $trade_date, $hand, $unitCost, $rate) {
         $data = $this->shippingSpace[$ts_code];
         if ($data == null) {
             return;
@@ -75,7 +75,7 @@ class StockAccount
                 $item["sold"] = true;
             } else {
                 $item["hand"] -= $nowHand;
-                $this->money += $nowHand * $unitCost * 100;
+                $this->money += ($nowHand * $unitCost * 100) / $rate;
                 $nowHand = 0;
                 break;
             }

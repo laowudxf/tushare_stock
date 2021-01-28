@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\StockDaily;
 use App\StockStrategies\DefaultStockStrategy;
 use App\StockStrategies\StrategyRunContainer;
+use App\StockStrategies\WeekStrategyRunContainer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
@@ -24,7 +25,7 @@ class StockController extends Controller
 //
 //        dd($ma5_t, $macd5);
 
-         return $this->lookBackTest(Carbon::create(2020, 5), Carbon::create(2020, 12));
+         return $this->lookBackTest(Carbon::create(2016, 1), Carbon::create(2020, 12));
     }
 
     public function  getStock($tz_code, $startDate, $endDate) {
@@ -40,7 +41,8 @@ class StockController extends Controller
     //-----------回测
     function lookBackTest($startDate, $endDate) {
         $strategy = new DefaultStockStrategy();
-        $runner = new StrategyRunContainer($startDate, $endDate, $strategy);
+//        $runner = new StrategyRunContainer($startDate, $endDate, $strategy);
+        $runner = new WeekStrategyRunContainer($startDate, $endDate, $strategy);
         $strategy->setRunContainer($runner);
         return $runner->run();
     }

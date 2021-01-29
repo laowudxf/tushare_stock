@@ -101,10 +101,9 @@ class TStrategy extends DefaultStockStrategy
                 continue;
             }
 
-            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
-//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBottomRebound_1($result);
-//            dd($this->bollMidSlope($bollTec, $dateFormat), $dateFormat, $stock);
-//            $isBuyPoint = ($this->bollMidSlope($bollTec) > 1) && $this->isMACDBottomRebound($result);
+//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
+            $isBuyPoint = $this->isMACDBottomRebound_1($result);
+
             if ($isBuyPoint) {
                 $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 7);
                 $this->buyPoint[$stock][] = [

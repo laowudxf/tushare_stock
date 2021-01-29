@@ -25,7 +25,7 @@ class StockController extends Controller
 //
 //        dd($ma5_t, $macd5);
 
-         return $this->lookBackTest(Carbon::create(2016, 1), Carbon::create(2020, 12));
+         return $this->lookBackTest(Carbon::create(2019, 1), Carbon::create(2020, 12));
     }
 
     public function  getStock($tz_code, $startDate, $endDate) {

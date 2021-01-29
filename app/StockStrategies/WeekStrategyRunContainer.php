@@ -152,9 +152,9 @@ class WeekStrategyRunContainer
         if ($trade_date instanceof Carbon) {
             $trade_date = $trade_date->format("Ymd");
         }
-        $dayDate = $dailyData->firstWhere('trade_date', $trade_date);
+        $dayDate = $this->stockDailyInfo($ts_code, $trade_date);
         if ($dayDate == null) {
-            log::warning("当天没有开盘数据 ts_code:{$ts_code}, 无法卖出");
+            log::warning("date: {$trade_date} 当天没有开盘数据 ts_code:{$ts_code}, 无法卖出");
             return -1;
         }
 
@@ -199,8 +199,8 @@ class WeekStrategyRunContainer
         }
         //week 策略 必须获取daily数据
 
-        $stock = Stock::where(['ts_code' => $ts_code])->first();
-        $dayData = StockDaily::where(['stock_id' => $stock->id, 'trade_date' => $trade_date])->first();
+        $dayData = $this->stockDailyInfo($ts_code, $trade_date);
+
 
         if ($dayData == null) {
             log::warning("当天没有开盘数据 ts_code:{$ts_code}, 无法购买");
@@ -220,6 +220,7 @@ class WeekStrategyRunContainer
 
         if ($price) {
             $hands = intval($price / $dayData->open / 100);
+
             if ($hands == 0) {
                 log::warning("资金不够 {$this->stockAccount->money}, ts_code:{$ts_code}, 无法购买");
                 return -2;
@@ -234,6 +235,14 @@ class WeekStrategyRunContainer
             return 0;
         }
 
+    }
+
+    function searchNearBy($item, $arr) {
+        foreach ($arr as $ik => $ii) {
+            if ($ii > intval($item)) {
+                return $ik - 1;
+            }
+        }
     }
 
     /***
@@ -252,8 +261,10 @@ class WeekStrategyRunContainer
         }
        $tecIndex = $this->stockTecData[$ts_code][$tecIndex];
       if ($isBoll == false) {
-          $tradeDateIndex = array_search($trade_date, array_keys($tecIndex));
+          $tradeDateIndex = $this->searchNearBy($trade_date, array_keys($tecIndex));
           $preDateIndex = $tradeDateIndex - ($preCount - 1);
+//          dd($tradeDateIndex);
+//          dd($preDateIndex, $preCount,$tecIndex);
           if ($preDateIndex < 0) {
               $preCount += $preDateIndex;
               $preDateIndex = 0;
@@ -264,15 +275,8 @@ class WeekStrategyRunContainer
           foreach ($tecIndex as $key => $item) {
               $tradeDateIndex = array_search($trade_date, array_keys($item));
               if ($tradeDateIndex == false) { //找最近的
-                  $last = false;
-                  foreach ($item as $ik => $ii) {
-                      if ($ik > intval($trade_date)) {
-                          $new_trade_date = $last;
-                          $tradeDateIndex = array_search($new_trade_date, array_keys($item));
-                         break;
-                      }
-                      $last = $ik;
-                  }
+                  $dates = array_keys($item);
+                  $tradeDateIndex = $this->searchNearBy($trade_date, $dates);
               }
               $preDateIndex = $tradeDateIndex - ($preCount - 1);
               if ($preDateIndex < 0) {
@@ -294,6 +298,13 @@ class WeekStrategyRunContainer
     public function stockDailyInfo($ts_code, $date) {
         $stock = Stock::where(['ts_code' => $ts_code])->first();
         $dayData = StockDaily::where(['stock_id' => $stock->id, 'trade_date' => $date])->first();
+        $newDayData = StockDaily::where(['stock_id' => $stock->id])->orderBy('trade_date', 'desc')->first();
+        if ($newDayData == null || $dayData == null) {
+            return null;
+        }
+        $scale = $dayData->fq_factor / $newDayData->fq_factor;
+        $dayData->open *= $scale;
+        $dayData->close *= $scale;
        return $dayData;
     }
 

@@ -53,14 +53,19 @@ class WeekStrategyRunContainer
         $tradeDates = TradeDate::dates($this->startDate->format("Ymd"), $this->endDate->format("Ymd"))->get();
         $tradeDates = $tradeDates->pluck('trade_date');
 
+        $tradeAccountInfo = [];
         foreach ($tradeDates as $tradeDate) {
             $date = Carbon::createFromFormat("Ymd", $tradeDate);
             //每周一交易一次 todo 有时候会放假
+            if ($date->isFriday()) {
+                $d = TradeDate::where('trade_date', '>=', $date->format("Ymd"))->orderBy('trade_date', 'asc')->first();
+                $this->strategy->closeQuotation(Carbon::createFromFormat("Ymd", strval($d->trade_date)));
+            }
             if ($date->isMonday()) {
                 $d = TradeDate::where('trade_date', '>=', $date->format("Ymd"))->orderBy('trade_date', 'asc')->first();
                 $this->strategy->openQuotation(Carbon::createFromFormat("Ymd", strval($d->trade_date)));
-                $this->strategy->closeQuotation(Carbon::createFromFormat("Ymd", strval($d->trade_date)));
             }
+            $tradeAccountInfo[] = ["date" => $tradeDate, "amount" => $this->stockAccount->allPropertyMoney($tradeDate)];
         }
 
         if ($this->showProfit) {
@@ -73,16 +78,15 @@ class WeekStrategyRunContainer
             }
         }
 
-        return $this->dealResult();
+        return $this->dealResult($tradeAccountInfo);
     }
 
-    function dealResult() {
+    function dealResult($tradeAccountInfo) {
         $flatten = Collect($this->strategy->buyPoint)->flatten(1);
 
 
         if ($this->isLookBackTest) {
             Log::info($this->stockAccount->tradeLogs);
-            Log::info($this->stockAccount->allPropertyMoney());
         }
         //打印结果
         if ($this->showProfit) {
@@ -95,7 +99,8 @@ class WeekStrategyRunContainer
 //        return  ["result" => ["涨:".$flatten->where('profit.1', '>', 0)->count(),
 //            "跌:".$flatten->where('profit.1', '<', 0)->count()],
 //            "buyPoint" => $this->strategy->buyPoint];
-        return RDS::success($this->stockAccount->tradeLogs);
+        return RDS::success(["trade_log" => $this->stockAccount->tradeLogs,
+            "account_log" => $tradeAccountInfo]);
 
     }
 

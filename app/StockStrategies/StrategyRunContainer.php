@@ -77,7 +77,6 @@ class StrategyRunContainer
 
         if ($this->isLookBackTest) {
             Log::info($this->stockAccount->tradeLogs);
-            Log::info($this->stockAccount->allPropertyMoney());
         }
         //打印结果
         if ($this->showProfit) {

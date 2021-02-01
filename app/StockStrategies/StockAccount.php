@@ -4,6 +4,8 @@
 namespace App\StockStrategies;
 
 
+use App\Models\StockDaily;
+
 class StockAccount
 {
     public $money;
@@ -18,11 +20,14 @@ class StockAccount
         $this->money = $money;
     }
 
-    public function allPropertyMoney() {
+    public function allPropertyMoney($trade_date) {
         $stockMoney = 0;
-       foreach ($this->shippingSpace as $space) {
-           foreach ($space as $item) {
-              $stockMoney += $item["unit_cost"] * $item["hand"] * 100;
+       foreach ($this->shippingSpace as $ts_code => $space) {
+           foreach ($space as $key => $item) {
+               $info = StockDaily::infoWithTsCodeQuery($ts_code)->where('trade_date', '<=', $trade_date)
+                   ->orderBy('trade_date', 'desc')->first();
+               $info->updatePrice();
+              $stockMoney += $info->close * $item["hand"] * 100;
            }
        }
        return round($stockMoney + $this->money, 2);
@@ -108,7 +113,7 @@ class StockAccount
             "price" => $price,
             "unit_cost" => $unitCost,
             "after_money" => round($this->money, 2),
-            "total_money" => $this->allPropertyMoney(),
+            "total_money" => $this->allPropertyMoney($trade_date),
         ];
     }
 
@@ -129,7 +134,7 @@ class StockAccount
            "price" => $price,
            "unit_cost" => $unitCost,
            "after_money" => round($this->money, 2),
-            "total_money" => $this->allPropertyMoney(),
+            "total_money" => $this->allPropertyMoney($trade_date),
        ];
 
     }

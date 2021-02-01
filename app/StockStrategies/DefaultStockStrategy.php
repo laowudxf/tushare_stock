@@ -80,28 +80,31 @@ class DefaultStockStrategy
         //卖出
         foreach ($account->shippingSpace as $key => $items) {
             foreach ($items as $item) {
-//               dd($date->format("Ymd"), $this->runContainer->nextTradeDays($item["date"], 4)->trade_date);
-                list($isProfit, $profitPercent) = $this->runContainer->stockAccount->isStockProfit($key, $date->format("Ymd"));
-                if ($profitPercent != null && $profitPercent < -0.10) { //止损
-                    $this->runContainer->sell($key, $date, $item["hand"]);
-                    continue;
+                $macdTec = $this->runContainer->tecIndexSlice($key, 0, $date->format("Ymd"), 5, false);
+                $bollTec = $this->runContainer->tecIndexSlice($key, 1, $date->format("Ymd"), 1, true);
+
+                if ($macdTec) {
+//                    $bollDown = $this->bollMidSlope($bollTec) < -0.2;
+//                    $bollDown1 = $this->bollMidSlope($bollTec) < -0.7;
+                    $isSellPoint = $this->isMACDTopRebound($macdTec);
+//                    if($isSellPoint || $weekInfo->pct_chg < -0.1) {
+                    if($isSellPoint ) {
+                        $shouldNotBeSell = false;
+                        foreach ($this->buyPlan as $plan) {
+                            foreach ($plan as $ts_code) {
+                                if ($ts_code == $key) {
+                                    $shouldNotBeSell = true;
+                                    continue;
+                                }
+                            }
+                        }
+                        if ($shouldNotBeSell) {
+                            continue;
+                        }
+                        $this->runContainer->sell($key, $date, $item["hand"]);
+                    }
                 }
 
-                if ($profitPercent != null && $profitPercent > 0.20) { //止盈
-                    $this->runContainer->sell($key, $date, $item["hand"]);
-                    continue;
-                }
-
-                $day = $this->runContainer->nextTradeDays($item["date"], 3 * 7);
-                if ($day == null) {
-                    continue;
-                }
-
-                if ($date->format("Ymd") < $day->trade_date) {
-                    continue; //先持有三天
-                }
-
-                $this->runContainer->sell($key, $date, $item["hand"]);
 
             }
         }
@@ -116,16 +119,29 @@ class DefaultStockStrategy
                 $macdTec = $this->runContainer->tecIndexSlice($key, 0, $date->format("Ymd"), 5, false);
                 $bollTec = $this->runContainer->tecIndexSlice($key, 1, $date->format("Ymd"), 1, true);
 
-                $preDay = $date->copy()->subDays();
-                $stock = Stock::where('ts_code', $key)->first();
-                $weekInfo = StockWeek::where(['stock_id' => $stock->id])->where("trade_date", '<', $preDay->format("Ymd"))
-                ->orderBy('trade_date', 'desc')->first();
+//                $preDay = $date->copy()->subDays();
+//                $stock = Stock::where('ts_code', $key)->first();
+//                $weekInfo = StockWeek::where(['stock_id' => $stock->id])->where("trade_date", '<', $preDay->format("Ymd"))
+//                ->orderBy('trade_date', 'desc')->first();
 
                 if ($macdTec) {
-                    $bollDown = $this->bollMidSlope($bollTec) < -0.3;
+                    $bollDown = $this->bollMidSlope($bollTec) < -0.2;
                     $bollDown1 = $this->bollMidSlope($bollTec) < -0.7;
                     $isSellPoint = ($this->isMACDTopRebound($macdTec) && $bollDown) || $bollDown1;
-                    if($isSellPoint) {
+//                    if($isSellPoint || $weekInfo->pct_chg < -0.1) {
+                    if($isSellPoint ) {
+                        $shouldNotBeSell = false;
+                        foreach ($this->buyPlan as $plan) {
+                            foreach ($plan as $ts_code) {
+                                if ($ts_code == $key) {
+                                    $shouldNotBeSell = true;
+                                    continue;
+                                }
+                            }
+                        }
+                        if ($shouldNotBeSell) {
+                           continue;
+                        }
                         $this->runContainer->sell($key, $date, $item["hand"]);
                     }
                 }
@@ -141,6 +157,7 @@ class DefaultStockStrategy
 
         $account = $this->runContainer->stockAccount;
         $this->sellStrategyMACD($date);
+//        $this->sellStrategy($date);
 
 
         //买入
@@ -178,15 +195,13 @@ class DefaultStockStrategy
                 continue;
             }
 
-//            $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
 
-//            $isBuyPoint =  $this->isMACDBuyDot($result);
-
+            //算法1
             $macdUpBuyPoint = $this->isMACDBottomRebound($result, false);
-            $isBuyPoint = ($this->isMACDBottomRebound($result) || $macdUpBuyPoint) && $this->isAscendingChannel($bollTec);
-//            if ($dateFormat > "20190201") {
-//                dd($macdUpBuyPoint, $isBuyPoint, $macdUpBuyPoint, $stocks);
-//            }
+            $isBuyPoint = (($this->isMACDBottomRebound($result) || $macdUpBuyPoint) && $this->isAscendingChannel($bollTec));
+
+//            $isBuyPoint = $this->isMACDBottomRebound($result) && $this->bollMidSlope($bollTec) > 0;;
+
             if ($isBuyPoint) {
                     $this->buyPoint[$stock][] = [
                         "date" =>  $date->format('Ymd'),
@@ -331,8 +346,8 @@ class DefaultStockStrategy
 //                }
 //                $last = $r;
 //            }
-            return true;
         }
+        return true;
     }
 
     //macd金叉
@@ -389,7 +404,7 @@ class DefaultStockStrategy
     }
 
     public function bollSlope(array $result, $type) {
-         $r = $result[$type + 3];
+        $r = $result[$type + 3];
          return $r[0] ?? null;
     }
 

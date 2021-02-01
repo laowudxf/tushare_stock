@@ -5,6 +5,7 @@ namespace App\StockStrategies;
 
 
 use App\Models\Stock;
+use App\Models\StockWeek;
 
 class DefaultStockStrategy
 {
@@ -112,22 +113,16 @@ class DefaultStockStrategy
         //卖出
         foreach ($account->shippingSpace as $key => $items) {
             foreach ($items as $item) {
-//               dd($date->format("Ymd"), $this->runContainer->nextTradeDays($item["date"], 4)->trade_date);
-                list($isProfit, $profitPercent) = $this->runContainer->stockAccount->isStockProfit($key, $date->format("Ymd"));
-//                if ($profitPercent != null && $profitPercent < -0.10) { //止损
-//                    $this->runContainer->sell($key, $date, $item["hand"]);
-//                    continue;
-//                }
-//
-//                if ($profitPercent != null && $profitPercent > 0.20) { //止盈
-//                    $this->runContainer->sell($key, $date, $item["hand"]);
-//                    continue;
-//                }
-
                 $macdTec = $this->runContainer->tecIndexSlice($key, 0, $date->format("Ymd"), 5, false);
                 $bollTec = $this->runContainer->tecIndexSlice($key, 1, $date->format("Ymd"), 1, true);
+
+                $preDay = $date->copy()->subDays();
+                $stock = Stock::where('ts_code', $key)->first();
+                $weekInfo = StockWeek::where(['stock_id' => $stock->id])->where("trade_date", '<', $preDay->format("Ymd"))
+                ->orderBy('trade_date', 'desc')->first();
+
                 if ($macdTec) {
-                    $bollDown = $this->bollMidSlope($bollTec) < 0;
+                    $bollDown = $this->bollMidSlope($bollTec) < -0.3;
                     $bollDown1 = $this->bollMidSlope($bollTec) < -0.7;
                     $isSellPoint = ($this->isMACDTopRebound($macdTec) && $bollDown) || $bollDown1;
                     if($isSellPoint) {
@@ -135,19 +130,6 @@ class DefaultStockStrategy
                     }
                 }
 
-//                $isBuyPoint = $this->isAscendingChannel($bollTec) && $this->isMACDBuyDot($result);
-//                dd($key);
-
-//                $day = $this->runContainer->nextTradeDays($item["date"], 3 * 7);
-//                if ($day == null) {
-//                    continue;
-//                }
-//
-//                if ($date->format("Ymd") < $day->trade_date) {
-//                    continue; //先持有三天
-//                }
-
-//                $this->runContainer->sell($key, $date, $item["hand"]);
 
             }
         }
@@ -200,18 +182,20 @@ class DefaultStockStrategy
 
 //            $isBuyPoint =  $this->isMACDBuyDot($result);
 
-            $isBuyPoint = $this->isMACDBottomRebound($result) && $this->isAscendingChannel($bollTec);
+            $macdUpBuyPoint = $this->isMACDBottomRebound($result, false);
+            $isBuyPoint = ($this->isMACDBottomRebound($result) || $macdUpBuyPoint) && $this->isAscendingChannel($bollTec);
+//            if ($dateFormat > "20190201") {
+//                dd($macdUpBuyPoint, $isBuyPoint, $macdUpBuyPoint, $stocks);
+//            }
             if ($isBuyPoint) {
-                $result = $this->runContainer->profitForNextDays($stock, $date->format("Ymd"), 3 * 7);
-                $this->buyPoint[$stock][] = [
-                    "date" =>  $date->format('Ymd'),
-                    "profit" => $result,
-                    "slope" => $this->bollUpSlope($bollTec)
-                ];
+                    $this->buyPoint[$stock][] = [
+                        "date" =>  $date->format('Ymd'),
+                        "slope" => $this->bollUpSlope($bollTec)
+                    ];
 
-                $this->buyPlan[] = [
-                    "stock" => $stock
-                ];
+                    $this->buyPlan[] = [
+                        "stock" => $stock
+                    ];
             }
         }
     }
@@ -277,11 +261,11 @@ class DefaultStockStrategy
 
     }
     /**
-     * 低点起来
+     * 低点起来 或者 一直往上走
      * @param array $result
      * @return bool
      */
-    public function isMACDBottomRebound(array $result) {
+    public function isMACDBottomRebound(array $result, $isNeedBottom = true) {
         if (empty($result)) {
             return false;
         }
@@ -306,8 +290,14 @@ class DefaultStockStrategy
             }
 
 
-            if ($item < $max[1]) {
-                $max = [$key, $item];
+            if ($isNeedBottom) {
+                if ($item < $max[1]) {
+                    $max = [$key, $item];
+                }
+            } else {
+                if ($item > $max[1]) {
+                    $max = [$key, $item];
+                }
             }
         }
 
@@ -315,29 +305,34 @@ class DefaultStockStrategy
 //            return false;
 //        }
 
-        //若最低的不是倒数第二个则不符合
-        if ($max[0] != count($result) - 2) {
-           return false;
-        }
+        if ($isNeedBottom) {
+            //若最低的不是倒数第二个则不符合
+            if ($max[0] != count($result) - 2) {
+                return false;
+            }
+        } else {
 
-        //最低的之前是递减
-//        $last = null;
-//        foreach ($result as $key => $r) {
-//            if ($key >= $max[0]) {
-//                break;
-//            }
-//            if ($last == null) {
+            if ($max[0] != count($result) - 1) {
+                return false;
+            }
+
+            //最低的之前是递减
+//            $last = null;
+//            foreach ($result as $key => $r) {
+//                if ($key >= $max[0]) {
+//                    break;
+//                }
+//                if ($last == null) {
+//                    $last = $r;
+//                    continue;
+//                }
+//                if ($r < $last) {
+//                    return false;
+//                }
 //                $last = $r;
-//                continue;
 //            }
-//            if ($r > $last) {
-//                return false;
-//            }
-//            $last = $r;
-//        }
-
-        return true;
-
+            return true;
+        }
     }
 
     //macd金叉

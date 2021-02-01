@@ -57,8 +57,9 @@ class WeekStrategyRunContainer
             $date = Carbon::createFromFormat("Ymd", $tradeDate);
             //每周一交易一次 todo 有时候会放假
             if ($date->isMonday()) {
-                $this->strategy->openQuotation($date);
-                $this->strategy->closeQuotation($date);
+                $d = TradeDate::where('trade_date', '>=', $date->format("Ymd"))->orderBy('trade_date', 'asc')->first();
+                $this->strategy->openQuotation(Carbon::createFromFormat("Ymd", strval($d->trade_date)));
+                $this->strategy->closeQuotation(Carbon::createFromFormat("Ymd", strval($d->trade_date)));
             }
         }
 
@@ -312,37 +313,40 @@ class WeekStrategyRunContainer
        return $dayData;
     }
 
-    public function nextTradeDays($date, $count = 1) {
-        $day1 = TradeDate::where('trade_date', $date)->first();
-        $day1 = TradeDate::find($day1->id + $count);
-        return $day1;
-    }
+//    public function nextTradeDays($date, $count = 1) {
+//        $day1 = TradeDate::where('trade_date', $date)->first();
+//        if ($day1 == null) {
+//            return $this->nextTradeDays(Carbon::createFromFormat("Ymd", strval($date))->addDays()->format("Ymd"), $count - 1);
+//        }
+//        $day1 = TradeDate::find($day1->id + $count);
+//        return $day1;
+//    }
     /***
      * @param $ts_code
      * @param $date
      * @param int $period
      * @return array|null
      */
-    public function profitForNextDays($ts_code, $date, $period = 3) {
-//        $day1 = TradeDate::where('trade_date', $date)->first();
-//        $day1 = TradeDate::find($day1->id + 1);
-        $day1 = $this->nextTradeDays($date);
-        if ($day1 == null) {
-            return null;
-        }
-        $day2 = TradeDate::find($day1->id + $period * 7);
-        if ($day2 == null) {
-            return null;
-        }
-        $stock1 = $this->stockDailyInfo($ts_code, $day1->trade_date);
-        $stock2 = $this->stockDailyInfo($ts_code, $day2->trade_date);
-//        dd($day1->trade_date, $day2->trade_date, $ts_code);
-        if ($stock2 == null || $stock1 == null) {
-            return null;
-        }
 
-        $closeOff = $stock2->close - $stock1->open;
-        $percent = $closeOff / $stock1->open;
-        return [$closeOff, round($percent, 2)];
+    public function profitForNextDays($ts_code, $date, $period = 3) {
+        return  null;
+//        $day1 = $this->nextTradeDays($date);
+//        if ($day1 == null) {
+//            return null;
+//        }
+//        $day2 = TradeDate::find($day1->id + $period * 7);
+//        if ($day2 == null) {
+//            return null;
+//        }
+//        $stock1 = $this->stockDailyInfo($ts_code, $day1->trade_date);
+//        $stock2 = $this->stockDailyInfo($ts_code, $day2->trade_date);
+////        dd($day1->trade_date, $day2->trade_date, $ts_code);
+//        if ($stock2 == null || $stock1 == null) {
+//            return null;
+//        }
+//
+//        $closeOff = $stock2->close - $stock1->open;
+//        $percent = $closeOff / $stock1->open;
+//        return [$closeOff, round($percent, 2)];
     }
 }

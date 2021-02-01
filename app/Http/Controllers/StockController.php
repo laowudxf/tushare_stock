@@ -14,29 +14,13 @@ class StockController extends Controller
 {
     //
     public function test() {
-//        $startDate = Date::create(2020, 1, 1);
-//        $endDate = now();
-//        $result = $this->getStock('000001.SZ', $startDate, $endDate);
-//
-//        $allClose = $result->pluck('close')->toArray();
-////        dd($allClose);
-//        $ma5_t =trader_ma($allClose, 5);
-//        $macd5 = trader_macd($allClose, 5);
-//
-//        dd($ma5_t, $macd5);
-
          return $this->lookBackTest(Carbon::create(2019, 1), Carbon::create(2020, 12));
     }
 
-    public function  getStock($tz_code, $startDate, $endDate) {
-        $startDateInt = $this->dateToInt($startDate);
-        $endDateInt = $this->dateToInt($endDate);
-        return StockDaily::where('stock_id', 2)->where('trade_date', '>=', $startDateInt)->where('trade_date', '<=', $endDateInt)->get();
-    }
 
-    private function dateToInt(Carbon $date) {
-       return intval(''.$date->year.sprintf("%02d", $date->month).sprintf("%02d", $date->day));
-    }
+//    private function dateToInt(Carbon $date) {
+//       return intval(''.$date->year.sprintf("%02d", $date->month).sprintf("%02d", $date->day));
+//    }
 
     //-----------回测
     function lookBackTest($startDate, $endDate) {

@@ -8,7 +8,6 @@ class TushareClient
 {
 
     const BASE_URL = "http://api.tushare.pro";
-    const TOKEN = "ad4ec55b8beed935a2de6d1d01e4894317e01ec8ed2653cd21452e30";
 
     const URI_STOCK_BASIC = "stock_basic";
     const URI_DAILY = "daily";
@@ -68,7 +67,7 @@ class TushareClient
        $response = $this->client->request("POST", self::BASE_URL, [
             "json" =>  [
                 "api_name" => $uri,
-                "token" => self::TOKEN,
+                "token" => env('TUSHARE_TOKEN'),
                 "params" => $param
             ]
         ]);

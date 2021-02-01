@@ -25,7 +25,7 @@ class StockAccount
               $stockMoney += $item["unit_cost"] * $item["hand"] * 100;
            }
        }
-       return $stockMoney + $this->money;
+       return round($stockMoney + $this->money, 2);
     }
 
     public function avgPrice($ts_code) {
@@ -66,6 +66,7 @@ class StockAccount
         }
 
         $nowHand = $hand;
+        $price = 0;
         foreach ($data as &$item) {
             if ($nowHand == 0) {
                 break;
@@ -75,15 +76,17 @@ class StockAccount
                 $item["sold"] = true;
             } else {
                 $item["hand"] -= $nowHand;
+                $price += ($nowHand * $unitCost * 100) / $rate;
                 $this->money += ($nowHand * $unitCost * 100) / $rate;
                 $nowHand = 0;
                 break;
             }
         }
 
-        $data = Collect($data)->map(function ($v) use ($unitCost){
+        $data = Collect($data)->map(function ($v) use ($unitCost, &$price){
             if (($v["sold"] ?? false) == true) {
                 $this->money += $v["hand"] * $unitCost * 100;
+                $price += $v["hand"] * $unitCost * 100;
             }
             return $v;
         })->filter(function ($v){
@@ -102,8 +105,10 @@ class StockAccount
             "type" => 1,
             "type_desc" => "sell",
             "hand" => $hand - $nowHand,
+            "price" => $price,
             "unit_cost" => $unitCost,
-            "after_money" => $this->money
+            "after_money" => round($this->money, 2),
+            "total_money" => $this->allPropertyMoney(),
         ];
     }
 
@@ -123,7 +128,8 @@ class StockAccount
            "hand" => $hand,
            "price" => $price,
            "unit_cost" => $unitCost,
-           "after_money" => $this->money
+           "after_money" => round($this->money, 2),
+            "total_money" => $this->allPropertyMoney(),
        ];
 
     }

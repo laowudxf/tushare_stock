@@ -14,6 +14,7 @@ class DefaultStockStrategy
 
     //初始 资金
     public $initMoney = 200000;
+    public $defaultStocks = [];
 
     public $needTecsParams = [
         [StockTecIndex::MACD, []],
@@ -48,13 +49,18 @@ class DefaultStockStrategy
 //        });
 //        return $stockPools->pluck('ts_code')->toArray();
 
-        return [
-            "000333.SZ",
+        if (count($this->defaultStocks)) {
+            return $this->defaultStocks;
+        } else {
+
+            return [
+                "000333.SZ",
 //            "300014.SZ",
 //            "601088.SH",
 //            "000725.SZ",
 //            "000001.SZ",
-        ];
+            ];
+        }
     }
 
 

@@ -10,6 +10,7 @@ use App\Models\StockDaily;
 use App\Models\StockTec;
 use App\Models\StockWeek;
 use App\Models\TradeDate;
+use App\Repository\Facade\RDS\RDS;
 use Carbon\Carbon;
 use Carbon\Traits\Date;
 use Illuminate\Support\Facades\Log;
@@ -90,9 +91,10 @@ class WeekStrategyRunContainer
         } else {
         }
 
-        return ["result" => ["涨:".$flatten->where('profit.1', '>', 0)->count(),
-            "跌:".$flatten->where('profit.1', '<', 0)->count()],
-            "buyPoint" => $this->strategy->buyPoint];
+//        return  ["result" => ["涨:".$flatten->where('profit.1', '>', 0)->count(),
+//            "跌:".$flatten->where('profit.1', '<', 0)->count()],
+//            "buyPoint" => $this->strategy->buyPoint];
+        return RDS::success($this->stockAccount->tradeLogs);
 
     }
 
@@ -304,7 +306,9 @@ class WeekStrategyRunContainer
         }
         $scale = $dayData->fq_factor / $newDayData->fq_factor;
         $dayData->open *= $scale;
+        $dayData->open = round($dayData->open, 2);
         $dayData->close *= $scale;
+        $dayData->close = round($dayData->close, 2);
        return $dayData;
     }
 

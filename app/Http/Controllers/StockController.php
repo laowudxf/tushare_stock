@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Stock;
 use App\Models\StockDaily;
+use App\Repository\Facade\RDS\RDS;
 use App\StockStrategies\DefaultStockStrategy;
 use App\StockStrategies\StrategyRunContainer;
 use App\StockStrategies\WeekStrategyRunContainer;
@@ -13,8 +15,16 @@ use Illuminate\Support\Facades\Date;
 class StockController extends Controller
 {
     //
-    public function test() {
-         return $this->lookBackTest(Carbon::create(2019, 1), Carbon::create(2020, 12));
+    public function test(Request $request) {
+        $startDate = $request->input("start_date");
+        $endDate = $request->input("end_date");
+        return $this->lookBackTest($request->input("ts_code"),
+            Carbon::createFromFormat("Y-m", $startDate),
+            Carbon::createFromFormat("Y-m", $endDate));
+    }
+
+    public function stocks() {
+        return RDS::success(Stock::all());
     }
 
 
@@ -23,8 +33,11 @@ class StockController extends Controller
 //    }
 
     //-----------回测
-    function lookBackTest($startDate, $endDate) {
+    function lookBackTest($ts_code, $startDate, $endDate) {
         $strategy = new DefaultStockStrategy();
+        if ($ts_code) {
+            $strategy->defaultStocks = [$ts_code];
+        }
 //        $runner = new StrategyRunContainer($startDate, $endDate, $strategy);
         $runner = new WeekStrategyRunContainer($startDate, $endDate, $strategy);
         $strategy->setRunContainer($runner);

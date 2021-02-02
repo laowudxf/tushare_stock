@@ -247,7 +247,7 @@ class WeekStrategyRunContainer
 
     function searchNearBy($item, $arr) {
         foreach ($arr as $ik => $ii) {
-            if ($ii > intval($item)) {
+            if ($ii >= intval($item)) {
                 return $ik - 1;
             }
         }

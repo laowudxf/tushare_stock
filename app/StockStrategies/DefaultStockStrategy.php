@@ -45,11 +45,11 @@ class DefaultStockStrategy
 
     public function ensureStockPool() {
 
-//        $stockPools = Stock::limit(20)->get();
-//        $stockPools = $stockPools->filter(function ($v){
-//            return strstr($v->name, "ST") == null;
-//        });
-//        return $stockPools->pluck('ts_code')->toArray();
+        $stockPools = Stock::limit(100)->get();
+        $stockPools = $stockPools->filter(function ($v){
+            return strstr($v->name, "ST") == null;
+        });
+        return $stockPools->pluck('ts_code')->toArray();
 
         if (count($this->defaultStocks)) {
             return $this->defaultStocks;
@@ -221,6 +221,7 @@ class DefaultStockStrategy
                 ];
 
                 $this->buyPlan[] = [
+                    "date" => $date->format("Ymd"),
                     "stock" => $stock
                 ];
             }

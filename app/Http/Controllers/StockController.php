@@ -18,10 +18,28 @@ class StockController extends Controller
     public function test(Request $request) {
         $startDate = $request->input("start_date");
         $endDate = $request->input("end_date");
-        $buyStock = $request->input("buyStock", false);
         return $this->lookBackTest($request->input("ts_code"),
             Carbon::createFromFormat("Y-m", $startDate),
-            Carbon::createFromFormat("Y-m", $endDate), $buyStock);
+            Carbon::createFromFormat("Y-m", $endDate));
+    }
+
+    public function buyStockAnalyse(Request $request) {
+
+        $strategy = new DefaultStockStrategy();
+
+        $now = now()->subDays(7);
+        $dateRange = $this->calcMondayAndFriday($now);
+        $runner = new WeekStrategyRunContainer(Carbon::createFromFormat("Ymd", $dateRange[0]),
+            Carbon::createFromFormat("Ymd", $dateRange[1]), $strategy);
+        $strategy->setRunContainer($runner);
+        $runner->run();
+        dd($strategy->buyPlan);
+    }
+
+    public function calcMondayAndFriday($d) {
+        $monday = $d->copy()->subDays($d->dayOfWeekIso - 1);
+        $friday = $d->copy()->addDays(5 - $d->dayOfWeekIso);
+        return [$monday->format("Ymd"), $friday->format("Ymd")];
     }
 
     public function stocks() {
@@ -34,7 +52,7 @@ class StockController extends Controller
 //    }
 
     //-----------回测
-    function lookBackTest($ts_code, $startDate, $endDate, $buyStock) {
+    function lookBackTest($ts_code, $startDate, $endDate) {
         $strategy = new DefaultStockStrategy();
         if ($ts_code) {
             $strategy->defaultStocks = [$ts_code];

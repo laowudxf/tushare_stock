@@ -20,5 +20,6 @@ Route::get("hello", function (\App\Repository\Facade\RDS\RDS $rds) {
 });
 
 Route::get('test', "StockController@test");
+Route::get('analyse', "StockController@buyStockAnalyse");
 Route::get('stocks', "StockController@stocks");
 

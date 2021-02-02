@@ -15,7 +15,7 @@ class GenerateStockWeek extends Command
      *
      * @var string
      */
-    protected $signature = 'app:stockWeek {--week}';
+    protected $signature = 'app:stockWeek {--week} {--date=}';
 
     /**
      * The console command description.
@@ -42,19 +42,29 @@ class GenerateStockWeek extends Command
     public function handle()
     {
         //
+        $date = $this->option("date");
        $allStocks = Stock::all(["id"]);
        $isWeek = $this->option("week");
        foreach ($allStocks as $index => $stock) {
            $this->info("dealing {$index}");
            $stockDaily = null;
            if ($isWeek == false) {
-               $stockDaily = StockDaily::where('stock_id', $stock->id)->orderBy("trade_date")->get();
+               if ($date == null) {
+                   $stockDaily = StockDaily::where('stock_id', $stock->id)->orderBy("trade_date")->get();
+               } else {
+                   $stockDaily = StockDaily::where('stock_id', $stock->id)
+                       ->where('trade_date', '>=', $date)
+                       ->orderBy("trade_date")->get();
+               }
            } else {
                list($mondayStr, $fridayStr) = $this->calcMondayAndFriday(now()->format("Ymd"));
                $stockDaily = StockDaily::where('stock_id', $stock->id)
                    ->where('trade_date', '>=', $mondayStr)
                    ->where('trade_date', '<=', $fridayStr)
                    ->orderBy("trade_date")->get();
+           }
+           if (count($stockDaily) == 0) {
+              continue;
            }
            $date = $stockDaily[0]->trade_date;
            list($mondayStr, $fridayStr) = $this->calcMondayAndFriday($date);
@@ -78,7 +88,18 @@ class GenerateStockWeek extends Command
                $insertStockWeekData[] = $this->dealWeekData($weekData, $lastClose);
            }
            if ($isWeek == false) {
-               StockWeek::insert($insertStockWeekData);
+               if ($date) {
+                   foreach ($insertStockWeekData as $data) {
+                       $exists = StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->exists();
+                       if ($exists == false) {
+                           StockWeek::create($data);
+                       } else {
+                           StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->update($data);
+                       }
+                   }
+               } else {
+                   StockWeek::insert($insertStockWeekData);
+               }
            } else {
                foreach ($insertStockWeekData as $data) {
                    $exists = StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->exists();

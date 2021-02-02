@@ -18,9 +18,10 @@ class StockController extends Controller
     public function test(Request $request) {
         $startDate = $request->input("start_date");
         $endDate = $request->input("end_date");
+        $buyStock = $request->input("buyStock", false);
         return $this->lookBackTest($request->input("ts_code"),
             Carbon::createFromFormat("Y-m", $startDate),
-            Carbon::createFromFormat("Y-m", $endDate));
+            Carbon::createFromFormat("Y-m", $endDate), $buyStock);
     }
 
     public function stocks() {
@@ -33,7 +34,7 @@ class StockController extends Controller
 //    }
 
     //-----------回测
-    function lookBackTest($ts_code, $startDate, $endDate) {
+    function lookBackTest($ts_code, $startDate, $endDate, $buyStock) {
         $strategy = new DefaultStockStrategy();
         if ($ts_code) {
             $strategy->defaultStocks = [$ts_code];

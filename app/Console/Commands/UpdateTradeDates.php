@@ -43,7 +43,7 @@ class UpdateTradeDates extends Command
         //
         $client = new TushareClient();
         $week = $this->option("week");
-        $tradeDates = $client->tradeDates( $week ? now()->subDays(7)->format("Ymd") :"20000101", now()->format("Ymd"));
+        $tradeDates = $client->tradeDates( $week ? now()->subDays(30)->format("Ymd") :"20000101", now()->format("Ymd"));
         if ($tradeDates["code"] != 0) {
             $this->warn("请求出错");
             return;

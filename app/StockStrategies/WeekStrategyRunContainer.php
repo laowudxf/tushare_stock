@@ -44,11 +44,10 @@ class WeekStrategyRunContainer
 
     function run(){
         $this->stockCodePool = $this->strategy->ensureStockPool();
-//        $t_start = msectime();
         $this->initData();
+//        $t_start = msectime();
 //        $t_end = msectime();
 //         dd($t_end - $t_start);
-//        $datePoint = $this->startDate->copy();
 
         $tradeDates = TradeDate::dates($this->startDate->format("Ymd"), $this->endDate->format("Ymd"))->get();
         $tradeDates = $tradeDates->pluck('trade_date');
@@ -271,8 +270,6 @@ class WeekStrategyRunContainer
       if ($isBoll == false) {
           $tradeDateIndex = $this->searchNearBy($trade_date, array_keys($tecIndex));
           $preDateIndex = $tradeDateIndex - ($preCount - 1);
-//          dd($tradeDateIndex);
-//          dd($preDateIndex, $preCount,$tecIndex);
           if ($preDateIndex < 0) {
               $preCount += $preDateIndex;
               $preDateIndex = 0;

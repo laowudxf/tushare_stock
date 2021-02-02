@@ -32,8 +32,14 @@ class StockController extends Controller
         $runner = new WeekStrategyRunContainer(Carbon::createFromFormat("Ymd", $dateRange[0]),
             Carbon::createFromFormat("Ymd", $dateRange[1]), $strategy);
         $strategy->setRunContainer($runner);
+
+        $stockPools = Stock::limit(4000)->get();
+        $stockPools = $stockPools->filter(function ($v){
+            return strstr($v->name, "ST") == null;
+        });
+        $strategy->defaultStocks = $stockPools->pluck('ts_code')->toArray();
         $runner->run();
-        dd($strategy->buyPlan);
+        return RDS::success($strategy->buyPlan);
     }
 
     public function calcMondayAndFriday($d) {

@@ -88,7 +88,8 @@ class StockSyncController extends Controller
         $client = new TushareClient();
         foreach ($allStocks as $stock) {
             $this->counterDelayCounter("stock");
-            $result = $client->stockDaily($stock->ts_code, null, now()->subDays(7)->format("Ymd"), now()->format("Ymd"));
+            $result = $client->stockDaily($stock->ts_code, null, now()->subDays(30)->format("Ymd"), now()->format("Ymd"));
+            Log::info($stock->name.' '.$stock->symbol);
             $this->dealOneStockDaily($result, $stock);
         }
     }
@@ -162,7 +163,7 @@ class StockSyncController extends Controller
     }
 
     function dealOneStockFQ($client,Stock $stock, $isWeek = false) {
-        $result = $client->stockFQ($stock->ts_code, null, $isWeek ? now()->subWeek(): null, null);
+        $result = $client->stockFQ($stock->ts_code, null, $isWeek ? now()->subDays(30): null, null);
 
         if ($result["code"] != 0) {
             Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");

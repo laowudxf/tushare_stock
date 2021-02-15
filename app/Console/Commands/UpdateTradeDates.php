@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Client\TushareClient;
+use App\Http\Controllers\UpdateController;
 use App\Models\StockDaily;
 use App\Models\TradeDate;
 use Illuminate\Console\Command;
@@ -38,29 +39,11 @@ class UpdateTradeDates extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(UpdateController $updateController)
     {
-        //
-        $client = new TushareClient();
         $week = $this->option("week");
-        $tradeDates = $client->tradeDates( $week ? now()->subDays(30)->format("Ymd") :"20000101", now()->format("Ymd"));
-        if ($tradeDates["code"] != 0) {
-            $this->warn("请求出错");
-            return;
-        }
-
-        $insert_data = [];
-        foreach ($tradeDates["data"]["items"] as $data) {
-            $this->info($data[1]);
-            if (TradeDate::where('trade_date', $data[1])->exists()) {
-                continue;
-            }
-            $insert_data[] = [
-                "trade_date" => $data[1]
-            ];
-        }
-        TradeDate::insert($insert_data);
-
+        $updateController->updateTradeDate($week);
         $this->info("成功");
     }
+
 }

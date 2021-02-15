@@ -89,21 +89,37 @@ class StockSyncController extends Controller
         foreach ($allStocks as $stock) {
             $this->counterDelayCounter("stock");
             $result = $client->stockDaily($stock->ts_code, null, now()->subDays(30)->format("Ymd"), now()->format("Ymd"));
-            Log::info($stock->name.' '.$stock->symbol);
             $this->dealOneStockDaily($result, $stock);
         }
     }
 
     public function counterDelayCounter($key) {
 
-        $timeStr = now()->format("YmdHi");
-        $counter = $this->delayCounter[$key][$timeStr] ?? 0;
-        if ($counter > 400) {
-            sleep(4);
+        $time = now()->timestamp;
+        if (isset($this->delayCounter[$key]) == false) {
+            $data = [$time, 1];
+            $this->delayCounter[$key] = $data;
             return;
         }
-        $counter += 1;
-        $this->delayCounter[$key][$timeStr] = $counter;
+
+        $data = $this->delayCounter[$key];
+
+        $count = $data[1];
+        $recordTime = $data[0];
+
+        if (($time - $recordTime) < 60) {
+            $count += 1;
+        } else {
+            $count = 0;
+            $recordTime = $time;
+        }
+
+        $this->delayCounter[$key] = [$recordTime, $count];
+
+        if ($count > 450) {
+            sleep(60 - ($time - $recordTime));
+            return;
+        }
     }
 
     private function dealOneStockDaily($data, $stock) {
@@ -111,7 +127,7 @@ class StockSyncController extends Controller
 
         if ($data["code"] != 0) {
             Log::warning("sync stock daily failed msg:".$data["msg"]);
-            return;
+            return -1;
         }
 
 
@@ -139,7 +155,7 @@ class StockSyncController extends Controller
             $allInsertDate[] = $insertData;
         }
         StockDaily::insert($allInsertDate);
-
+        return 0;
     }
 
     function syncStockFQ() {

@@ -247,7 +247,7 @@ class WeekStrategyRunContainer
     function searchNearBy($item, $arr) {
         foreach ($arr as $ik => $ii) {
             if ($ii >= intval($item)) {
-                return $ik - 1;
+                return $ik;
             }
         }
     }
@@ -278,11 +278,12 @@ class WeekStrategyRunContainer
       } else {
           $result = [];
           foreach ($tecIndex as $key => $item) {
-              $tradeDateIndex = array_search($trade_date, array_keys($item));
-              if ($tradeDateIndex == false) { //找最近的
-                  $dates = array_keys($item);
-                  $tradeDateIndex = $this->searchNearBy($trade_date, $dates);
-              }
+//              $tradeDateIndex = array_search($trade_date, array_keys($item));
+//              if ($tradeDateIndex == false) { //找最近的
+//                  $dates = array_keys($item);
+//                  $tradeDateIndex = $this->searchNearBy($trade_date, $dates);
+//              }
+              $tradeDateIndex = $this->searchNearBy($trade_date, array_keys($tecIndex[0]));
               $preDateIndex = $tradeDateIndex - ($preCount - 1);
               if ($preDateIndex < 0) {
                   $preCount += $preDateIndex;

@@ -206,10 +206,10 @@ class DefaultStockStrategy
                 continue;
             }
 
-
             //算法1
             $macdUpBuyPoint = $this->isMACDBottomRebound($result, false);
             $isBuyPoint = (($this->isMACDBottomRebound($result) || $macdUpBuyPoint) && $this->isAscendingChannel($bollTec));
+//            dd($macdUpBuyPoint, $isBuyPoint, $this->isAscendingChannel($bollTec), $this->bollMidSlope($bollTec));
 
 //            $isBuyPoint = $this->isMACDBottomRebound($result) && $this->bollMidSlope($bollTec) > 0;;
 
@@ -221,7 +221,8 @@ class DefaultStockStrategy
 
                 $this->buyPlan[] = [
                     "date" => $date->format("Ymd"),
-                    "stock" => $stock
+                    "stock" => $stock,
+                    "stock_name" => Stock::where('ts_code', $stock)->first()->name
                 ];
             }
         }

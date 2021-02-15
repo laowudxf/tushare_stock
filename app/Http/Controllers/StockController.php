@@ -27,17 +27,21 @@ class StockController extends Controller
 
         $strategy = new DefaultStockStrategy();
 
-        $now = now()->subDays(7);
+//        $now = now()->subDays(7);
+        $date = $request->input("date", "20210205");
+        $now = Carbon::createFromFormat("Ymd", $date);
         $dateRange = $this->calcMondayAndFriday($now);
         $runner = new WeekStrategyRunContainer(Carbon::createFromFormat("Ymd", $dateRange[0]),
             Carbon::createFromFormat("Ymd", $dateRange[1]), $strategy);
         $strategy->setRunContainer($runner);
 
-        $stockPools = Stock::limit(4000)->get();
+        $stockPools = Stock::all();
+//        $stockPools = Stock::limit(10)->get();
         $stockPools = $stockPools->filter(function ($v){
             return strstr($v->name, "ST") == null;
         });
         $strategy->defaultStocks = $stockPools->pluck('ts_code')->toArray();
+//        $strategy->defaultStocks = ["000155.SZ"];
         $runner->run();
         return RDS::success($strategy->buyPlan);
     }

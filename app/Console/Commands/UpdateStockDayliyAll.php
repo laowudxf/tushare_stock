@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Http\Controllers\StockSyncController;
+use App\Http\Controllers\UpdateController;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -37,7 +38,7 @@ class UpdateStockDayliyAll extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(UpdateController $updateController)
     {
         //
 //        $week = $this->option("week");
@@ -46,6 +47,7 @@ class UpdateStockDayliyAll extends Command
 
         $week = $this->option("week");
         $ssc = new StockSyncController();
+        $updateController->updateTradeDate($week);
         if ($week) {
 
             if (now()->isWeekend()) {

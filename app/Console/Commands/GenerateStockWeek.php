@@ -43,7 +43,7 @@ class GenerateStockWeek extends Command
     public function handle(UpdateController $updateController)
     {
         //
-        $date = $this->argument("date=");
+        $date = $this->option("date");
         $isWeek = $this->option("week");
         $updateController->generatorWeekStock($date, $isWeek, $this);
     }

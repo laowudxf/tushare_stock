@@ -57,6 +57,9 @@ class UpdateStockDayliyAll extends Command
 
             $ssc->syncStockDailyWeek();
             $ssc->syncStockFQWeek();
+            if (now()->isFriday()) {
+                $updateController->generatorWeekStock(null, true, $this);
+            }
         } else {
             $ssc->syncStockDailyAll();
             $ssc->syncStockFQ();

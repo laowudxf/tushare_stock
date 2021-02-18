@@ -36,12 +36,7 @@ class UpdateController extends Controller
 
     }
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function generatorWeekStock($date, $isWeek)
+    public function generatorWeekStock($inputDate, $isWeek)
     {
         //
         $allStocks = Stock::all(["id"]);
@@ -49,11 +44,11 @@ class UpdateController extends Controller
             Log::info("dealing {$index}");
             $stockDaily = null;
             if ($isWeek == false) {
-                if ($date == null) {
+                if ($inputDate == null) {
                     $stockDaily = StockDaily::where('stock_id', $stock->id)->orderBy("trade_date")->get();
                 } else {
                     $stockDaily = StockDaily::where('stock_id', $stock->id)
-                        ->where('trade_date', '>=', $date)
+                        ->where('trade_date', '>=', $inputDate)
                         ->orderBy("trade_date")->get();
                 }
             } else {
@@ -88,7 +83,7 @@ class UpdateController extends Controller
                 $insertStockWeekData[] = $this->dealWeekData($weekData, $lastClose);
             }
             if ($isWeek == false) {
-                if ($date) {
+                if ($inputDate) {
                     foreach ($insertStockWeekData as $data) {
                         $exists = StockWeek::where('stock_id', $data["stock_id"])->where('trade_date', $data["trade_date"])->exists();
                         if ($exists == false) {

@@ -36,12 +36,16 @@ class UpdateController extends Controller
 
     }
 
-    public function generatorWeekStock($inputDate, $isWeek)
+    public function generatorWeekStock($inputDate, $isWeek, $console)
     {
         //
         $allStocks = Stock::all(["id"]);
         foreach ($allStocks as $index => $stock) {
-            Log::info("dealing {$index}");
+            if ($console) {
+                $console->info("dealing {$index}");
+            } else {
+                Log::info("dealing {$index}");
+            }
             $stockDaily = null;
             if ($isWeek == false) {
                 if ($inputDate == null) {

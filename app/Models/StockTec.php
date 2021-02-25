@@ -6,6 +6,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * App\Models\StockTec
+ *
+ * @property int $id
+ * @property string $ts_code
+ * @property int $trade_date
+ * @property float|null $macd
+ * @property float|null $boll_0
+ * @property float|null $boll_1
+ * @property float|null $boll_2
+ * @property float|null $boll_3
+ * @property float|null $boll_4
+ * @property float|null $boll_5
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec query()
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereBoll0($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereBoll1($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereBoll2($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereBoll3($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereBoll4($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereBoll5($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereMacd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereTradeDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\StockTec whereTsCode($value)
+ * @mixin \Eloquent
+ */
 class StockTec extends Model
 {
 

@@ -72,5 +72,13 @@ class StockController extends Controller
         $strategy->setRunContainer($runner);
         return $runner->run();
     }
+    function stockInfo(Request $request) {
+       $ts_code = $request->input("ts_code");
+        $stock = Stock::where('ts_code', $ts_code)->firstOrFail();
+        $result = StockDaily::where('stock_id', $stock->id)
+            ->where('trade_date', '>', '20140101')->orderBy('trade_date')->get();
+        StockDaily::updatePriceArray($result);
+       return RDS::success(["stock" => $stock, "daily" => $result]);
+    }
 }
 

@@ -9,6 +9,7 @@ use App\Models\Market;
 use App\Models\Stock;
 
 use App\Models\StockDaily;
+use App\Models\StockDailyExtra;
 use App\Models\StockFq;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,8 @@ use function foo\func;
 class StockSyncController extends Controller
 {
     //
+
+    public $console;
 
     public function syncStockList() {
         $client = new TushareClient();
@@ -71,10 +74,32 @@ class StockSyncController extends Controller
         }
     }
 
+    function syncStockDailyExtra($week = false) {
+        $allStocks = Stock::all();
+        $client = new TushareClient();
+        foreach ($allStocks as $stock) {
+            $this->counterDelayCounter("dailyExtra", 9 );
+            $result = null;
+            if ($week) {
+                $result = $client->backDaily($stock->ts_code, null, now()->subDays(30)->format("Ymd"), now()->format("Ymd"));
+            } else {
+                $result = $client->backDaily($stock->ts_code);
+            }
+            $this->dealOneStockDailyExtra($result, $stock);
+        }
+    }
+
     function syncStockDailyAll() {
            $allStocks = Stock::all();
            $client = new TushareClient();
-           foreach ($allStocks as $stock) {
+           $count = count($allStocks);
+           foreach ($allStocks as $key => $stock) {
+               $log = "deal {$key} total {$count}";
+               if ($this->console) {
+                   $this->console->info($log);
+               } else {
+                   Log::info($log);
+               }
                $this->counterDelayCounter("stock");
                $result = $client->stockDaily($stock->ts_code);
                $this->dealOneStockDaily($result, $stock);
@@ -93,7 +118,7 @@ class StockSyncController extends Controller
         }
     }
 
-    public function counterDelayCounter($key) {
+    public function counterDelayCounter($key, $customCount = 460) {
 
         $time = now()->timestamp;
         if (isset($this->delayCounter[$key]) == false) {
@@ -116,12 +141,48 @@ class StockSyncController extends Controller
 
         $this->delayCounter[$key] = [$recordTime, $count];
 
-        if ($count > 450) {
+        if ($count > $customCount ? $customCount : 450) {
             sleep(60 - ($time - $recordTime));
             return;
         }
     }
 
+    private function dealOneStockDailyExtra($data, $stock) {
+        $stockId = $stock->id;
+
+        if ($data["code"] != 0) {
+            Log::warning("sync stock daily failed msg:".$data["msg"]);
+            return -1;
+        }
+
+
+        $fields =  $data["data"]["fields"];
+        $items =  $data["data"]["items"];
+
+
+        $insertData = [];
+
+        Log::info("update stock daily extra symbol:{$stock->symbol} name:{$stock->name}");
+        $allInsertDate = [];
+        foreach ($items as $item) {
+            $trade_date = $item[1];
+            if (StockDailyExtra::where('trade_date', $trade_date)->where('stock_id', $stockId)->exists()) {
+                continue;
+            }
+            foreach ($item as $key => $v) {
+                $k = $fields[$key];
+                if ($k == "ts_code") {
+                    $insertData["stock_id"] = $stockId;
+                    continue;
+                }
+                $insertData[$k] = $v;
+            }
+            $tmp = collect($insertData);
+            $allInsertDate[] = $tmp->only(["stock_id", "trade_date", "pe", "total_mv", "float_mv"])->toArray();
+        }
+        StockDailyExtra::insert($allInsertDate);
+        return 0;
+    }
     private function dealOneStockDaily($data, $stock) {
         $stockId = $stock->id;
 

@@ -14,9 +14,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get("hello", function (\App\Repository\Facade\RDS\RDS $rds) {
-    $c = new \App\Http\Controllers\StockSyncController();
-    $c->syncStockFQ();
+Route::get("hello", function (\App\Client\TushareClient $client) {
+    return \App\Repository\Facade\RDS\RDS::success( $client->backDaily());
 });
 
 Route::get('test', "StockController@test");

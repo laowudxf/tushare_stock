@@ -2,11 +2,17 @@ import akshare as ak
 import pymysql.cursors
 import sys
 import datetime
+import argparse
 
-args = sys.argv[1:]
-isDay = False
-if "--day" in args:
-    isDay = True
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--day', default=False)
+parser.add_argument('--host', default="127.0.0.1")
+parser.add_argument('--user', default="root")
+parser.add_argument('--password', default="")
+parser.add_argument('--database', default="tushare")
+
+args = parser.parse_args()
+isDay = args.day
 
 now = datetime.datetime.now()
 
@@ -15,7 +21,7 @@ dateStr = "20000101"
 if isDay:
     dateStr = nowStr
 
-connection = pymysql.connect(host='127.0.0.1', user='root', password='woailmr', database='tushare', cursorclass=pymysql.cursors.DictCursor)
+connection = pymysql.connect(host=args.host, user=args.user, password=args.password, database=args.database, cursorclass=pymysql.cursors.DictCursor)
 # connection = pymysql.connect(host='127.0.0.1', user='root', password='woailmr', database='tushare', cursorclass=pymysql.cursors.DictCursor)
 
 def insertStockInfo(stockInfos, stock_id, cursor):

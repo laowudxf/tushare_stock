@@ -118,6 +118,12 @@ class StockSyncController extends Controller
         }
     }
 
+    function syncStockDailyDay($trade_date) {
+        $client = new TushareClient();
+        $result = $client->stockDaily(null, $trade_date);
+        $this->dealAllStockDaily($result);
+    }
+
     public function counterDelayCounter($key, $customCount = 460) {
 
         $time = now()->timestamp;
@@ -184,6 +190,44 @@ class StockSyncController extends Controller
         StockDailyExtra::insert($allInsertDate);
         return 0;
     }
+
+    private function dealAllStockDaily($data) {
+        if ($data["code"] != 0) {
+            Log::warning("sync stock daily failed msg:".$data["msg"]);
+            return -1;
+        }
+
+        $fields =  $data["data"]["fields"];
+        $items =  $data["data"]["items"];
+
+
+        $insertData = [];
+
+        foreach ($items as $item) {
+            $ts_code = '';
+            foreach ($item as $key => $v) {
+                $k = $fields[$key];
+                if ($k == "ts_code") {
+                    $ts_code = $v;
+                    continue;
+                }
+                $insertData[$k] = $v;
+            }
+            $stock = Stock::where('ts_code', $ts_code)->first();
+            if ($stock == null) {
+                continue;
+            }
+            $info = $stock->stockDailies()->where('trade_date', $insertData["trade_date"])->first();
+            Log::info("update stock daily symbol:{$stock->symbol} name:{$stock->name}");
+            if ($info) {
+                $info->update($insertData);
+            } else {
+                $stock->stockDailies()->create($insertData);
+            }
+        }
+        return 0;
+    }
+
     private function dealOneStockDaily($data, $stock) {
         $stockId = $stock->id;
 
@@ -238,6 +282,93 @@ class StockSyncController extends Controller
             Log::info("index: {$key} update stock daily symbol:{$stock->symbol} name:{$stock->name}");
             $this->dealOneStockFQ($client, $stock, true);
         }
+    }
+
+    function syncStockFQDay($trade_date) {
+        $client = new TushareClient();
+        $data = $client->stockFQ('', $trade_date);
+
+        $fields =  $data["data"]["fields"];
+        $items =  $data["data"]["items"];
+
+
+        $insertData = [];
+
+        foreach ($items as $item) {
+            $ts_code = '';
+            foreach ($item as $key => $v) {
+                $k = $fields[$key];
+                if ($k == "ts_code") {
+                    $ts_code = $v;
+                    continue;
+                }
+                if ($k == "adj_factor") {
+                    $insertData["fq_factor"] = $v;
+                    continue;
+                }
+                $insertData[$k] = $v;
+            }
+            $stock = Stock::where('ts_code', $ts_code)->first();
+            if ($stock == null) {
+                continue;
+            }
+            $info = $stock->stockDailies()->where('trade_date', $insertData["trade_date"])->first();
+            Log::info("update stock daily symbol:{$stock->symbol} name:{$stock->name}");
+            if ($info) {
+                $info->update($insertData);
+            }
+        }
+        return 0;
+
+//        if ($result["code"] != 0) {
+//            Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");
+//            return;
+//        }
+//
+//        $data = $result["data"];
+//        $items = $data["items"];
+//
+//
+//        while ($data["has_more"] == true) {
+//            $count = count($items);
+//            $endDate = $items[$count - 1];
+//
+//            $result = $client->stockFQ($stock->ts_code, null, null, $endDate[1]);
+//
+//            if ($result["code"] != 0) {
+//                Log::error("update Stock FQ fail name:{$stock->name} msg:{$result["msg"]}");
+//                return;
+//            }
+//
+//            $data = $result["data"];
+//            $items = array_merge($items, $result["data"]["items"]);
+//        }
+//
+//        $insertData = [];
+//        $a = [];
+//        $r = $stock->stockDailies()->get();
+//        foreach ($r as $v) {
+//            $a[strval($v->trade_date)] = $v->id;
+//        }
+//        foreach ($items as $key => $item) {
+//
+//            $trade_date = $item[1];
+//            if (isset($a[strval($trade_date)]) == false) {
+//                continue;
+//            }
+//
+//            $record_id = $a[strval($trade_date)];
+//
+//            $insertData[] = [
+//                "id" => $record_id,
+//                "fq_factor" => $item[2]
+//            ];
+//        }
+//
+//        $chunk_datas = array_chunk($insertData, 200, true);
+//        foreach ($chunk_datas as $chunk_data) {
+//            $this->updateBatch("stock_dailies",$chunk_data);
+//        }
     }
 
     function dealOneStockFQ($client,Stock $stock, $isWeek = false) {

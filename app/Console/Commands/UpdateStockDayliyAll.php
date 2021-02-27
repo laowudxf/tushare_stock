@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Http\Controllers\StockSyncController;
 use App\Http\Controllers\UpdateController;
+use App\Models\TradeDate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -49,14 +50,14 @@ class UpdateStockDayliyAll extends Command
         $ssc = new StockSyncController();
         $updateController->updateTradeDate($week);
         if ($week) {
-
             if (now()->isWeekend()) {
                 Log::info("周末不需要拉取");
                 return;
             }
 
-            $ssc->syncStockDailyWeek();
-            $ssc->syncStockFQWeek();
+            $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
+            $ssc->syncStockDailyDay($tradeDate->trade_date);
+            $ssc->syncStockFQDay($tradeDate->trade_date);
             if (now()->isFriday()) {
                 $updateController->generatorWeekStock(null, true, $this);
             }

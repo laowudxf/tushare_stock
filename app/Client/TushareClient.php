@@ -35,7 +35,10 @@ class TushareClient
     }
 
     public function stockDaily($tsCode, $tradeDate = null, $startDate = null, $endDate = null) {
-        $param = ["ts_code" => $tsCode];
+        $param = [];
+        if ($tsCode) {
+            $param = ["ts_code" => $tsCode];
+        }
         if($tradeDate) {
             $param = array_merge($param, ["trade_date" => $tradeDate]);
         } else if ($startDate && $endDate) {

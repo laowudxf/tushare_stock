@@ -141,10 +141,11 @@ class StockSyncController extends Controller
 
         $this->delayCounter[$key] = [$recordTime, $count];
 
-        if ($count > $customCount ? $customCount : 450) {
+        if ($count > ($customCount ? $customCount : 460)) {
             sleep(60 - ($time - $recordTime));
             return;
         }
+
     }
 
     private function dealOneStockDailyExtra($data, $stock) {

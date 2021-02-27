@@ -40,6 +40,7 @@ class UpdateController extends Controller
     {
         //
         $allStocks = Stock::all(["id"]);
+//        $allStocks = Stock::select(["id"])->where('id', '>=', '4180')->get();
         foreach ($allStocks as $index => $stock) {
             if ($console) {
                 $console->info("dealing {$index}");

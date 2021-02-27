@@ -58,12 +58,14 @@ class UpdateStockDayliyAll extends Command
             $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
             $ssc->syncStockDailyDay($tradeDate->trade_date);
             $ssc->syncStockFQDay($tradeDate->trade_date);
+            exec("python3.8 ./Script/ak_share/updateMarketValue.py --day");
             if (now()->isFriday()) {
                 $updateController->generatorWeekStock(null, true, $this);
             }
         } else {
             $ssc->syncStockDailyAll();
             $ssc->syncStockFQ();
+            exec("python3.8 ./Script/ak_share/updateMarketValue.py");
         }
     }
 }

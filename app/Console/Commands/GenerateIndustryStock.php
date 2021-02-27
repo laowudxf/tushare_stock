@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Industry;
 use App\Models\Stock;
 use App\Models\StockDaily;
+use App\Models\StockDailyExtra;
 use App\Models\TradeDate;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -16,7 +17,7 @@ class GenerateIndustryStock extends Command
      *
      * @var string
      */
-    protected $signature = 'stock:genIndStock';
+    protected $signature = 'stock:genIndStock {--day}';
 
     /**
      * The console command description.
@@ -43,20 +44,24 @@ class GenerateIndustryStock extends Command
     public function handle()
     {
         //
+        $isDay = $this->option("day");
         $industries = Industry::all();
-//        $industries = Industry::whereId(17)->get();
         $startDate = '20100101';
-//        $startDate = '20210106';
 
         $allDates = TradeDate::where('trade_date', '>=', $startDate)
             ->orderBy('trade_date')
             ->get();
+        if ($isDay) {
+            $allDates = [$allDates->last()];
+        }
 
         $indusCount = count($industries);
         foreach ($industries as $industryKey => $industry) {
             $this->info("deal {$industry->name}, index {$industryKey} total {$indusCount}");
             $newStock = $this->createStock($industryKey, $industry, $startDate);
-            $newStock->stockDailies()->delete();
+            if ($isDay == false) {
+                $newStock->stockDailies()->delete();
+            }
 
             $allStock = Stock::whereIndustryId($industry->id)->get();
 
@@ -72,35 +77,14 @@ class GenerateIndustryStock extends Command
 
                 $infos = $stockDailies = StockDaily::whereIn('stock_id', $validStocks->pluck('id'))
                     ->where('trade_date', $date->trade_date)->get();
-                $lastInsertData = $this->generateStock($infos,$date->trade_date,$industry,$newStock, $lastInsertData);
+                $infosExt = $stockDailies = StockDailyExtra::whereIn('stock_id', $validStocks->pluck('id'))
+                    ->where('trade_date', $date->trade_date)->get();
+                $lastInsertData = $this->generateStock($infos,$date->trade_date,$newStock, $lastInsertData, $infosExt);
+                if ($lastInsertData) {
                     $insertData[] = $lastInsertData;
-                $preDate = $date;
+                }
             }
             StockDaily::insert($insertData);
-            /*
-            $stockDailies = StockDaily::whereIn('stock_id', $allStock->pluck('id'))
-                ->where('trade_date', '>=', $startDate)->orderBy('trade_date')->get();
-            $index = 0;
-            $count = count($stockDailies);
-            $infos = [];
-
-
-            $preDate = null;
-            foreach ($allDates as $key => $date) {
-                $info = $stockDailies[$index];
-                while ($info->trade_date == $date->trade_date) { //聚合操作
-                    $infos[] = $info;
-                    $index += 1;
-                    if ($count == $index) {
-                        break;
-                    }
-                    $info = $stockDailies[$index];
-                }
-                $this->generateStock($infos, $date->trade_date, $industry, $newStock, $preDate);
-                $infos = [];
-                $preDate = $date;
-            }
-            */
         }
     }
 
@@ -124,7 +108,7 @@ class GenerateIndustryStock extends Command
         $stock->save();
         return $stock;
     }
-    public function generateStock($infos, $date, $industry, $newStock, $preData) {
+    public function generateStock($infos, $date, $newStock, $preData, $infosExt) {
         $lastStockInfo = null;
 
         $pre_close = 100; //初始值为1
@@ -132,12 +116,34 @@ class GenerateIndustryStock extends Command
             $pre_close = $preData["close"];
         }
 
-        $infosCollect = $infos;
-        $allAmount = $infosCollect->sum('amount');
+        $allAmount = $infosExt->sum('market_value');
+        if ($allAmount == 0) {
+            return null;
+        }
 
-        $pct_chg = $infos->sum(function ($v) use($allAmount) {
-            return $v["pct_chg"] * ($v["amount"] / $allAmount);
+        $infoIds = $infos->pluck("stock_id");
+        $infoExtIds = $infosExt->pluck("stock_id");
+        $diff = array_diff($infoIds->toArray(), $infoExtIds->toArray());
+        if (count($diff)) {
+            $diffCollect = collect($diff);
+            $infos = $infos->filter(function ($v) use($diffCollect) {
+                return $diffCollect->contains($v->stock_id) == false;
+            });
+
+            $infosExt = $infosExt->filter(function ($v) use($diffCollect) {
+                return $diffCollect->contains($v->stock_id) == false;
+            });
+            $allAmount = $infosExt->sum('market_value');
+        }
+
+        $infos = $infos->filter(function ($v) use($allAmount, $infosExt) {
+            return $infosExt->firstWhere('stock_id', $v["stock_id"]) != null;
         });
+
+        $pct_chg = $infos->sum(function ($v) use($allAmount, $infosExt) {
+            return $v["pct_chg"] * ($infosExt->firstWhere('stock_id', $v["stock_id"])->market_value / $allAmount);
+        });
+
 
         $open = $pre_close;
         $close = $open * ((100 + $pct_chg) / 100);

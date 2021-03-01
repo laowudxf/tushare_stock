@@ -12,7 +12,7 @@ parser.add_argument('--password', default="")
 parser.add_argument('--database', default="tushare")
 
 args = parser.parse_args()
-isDay = args.day
+isDay = bool(args.day)
 
 now = datetime.datetime.now()
 

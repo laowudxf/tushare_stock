@@ -58,14 +58,16 @@ class UpdateStockDayliyAll extends Command
             $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
             $ssc->syncStockDailyDay($tradeDate->trade_date);
             $ssc->syncStockFQDay($tradeDate->trade_date);
-            exec(env("PYTHON_VERSION", "python3.8")." ./Script/ak_share/updateMarketValue.py --day --password=".env('PYTHON_PASSWORD'));
+            exec(env("PYTHON_VERSION", "python3.8")." ./Script/ak_share/updateMarketValue.py --day --password=".env('DB_PASSWORD')
+                ." --host=".env("DB_HOST","127.0.0.1")." --database=".env("DB_DATABASE"));
             if (now()->isFriday()) {
                 $updateController->generatorWeekStock(null, true, $this);
             }
         } else {
             $ssc->syncStockDailyAll();
             $ssc->syncStockFQ();
-            exec(env("PYTHON_VERSION", "python3.8")." ./Script/ak_share/updateMarketValue.py --password=".env('PYTHON_PASSWORD'));
+            exec(env("PYTHON_VERSION", "python3.8")." ./Script/ak_share/updateMarketValue.py --day --password=".env('DB_PASSWORD')
+                ." --host=".env("DB_HOST","127.0.0.1")." --database=".env("DB_DATABASE"));
         }
     }
 }

@@ -75,13 +75,19 @@ class StockSyncController extends Controller
     }
 
     function syncStockDailyExtra($week = false) {
-        $allStocks = Stock::all();
+        $allStocks = Stock::allStockWithoutCS();
         $client = new TushareClient();
-        foreach ($allStocks as $stock) {
-            $this->counterDelayCounter("dailyExtra", 9 );
+        $c = count($allStocks);
+        foreach ($allStocks as $key => $stock) {
+            if ($this->console) {
+                $this->console->info("deal {$key} count: {$c}");
+            } else {
+                Log::info("deal {$key} count: {$c}");
+            }
+            $this->counterDelayCounter("dailyExtra");
             $result = null;
             if ($week) {
-                $result = $client->backDaily($stock->ts_code, null, now()->subDays(30)->format("Ymd"), now()->format("Ymd"));
+                $result = $client->backDaily(null, now()->format("Ymd"));
             } else {
                 $result = $client->backDaily($stock->ts_code);
             }
@@ -90,7 +96,7 @@ class StockSyncController extends Controller
     }
 
     function syncStockDailyAll() {
-           $allStocks = Stock::all();
+           $allStocks = Stock::allStockWithoutCS();
            $client = new TushareClient();
            $count = count($allStocks);
            foreach ($allStocks as $key => $stock) {
@@ -109,7 +115,7 @@ class StockSyncController extends Controller
     private $delayCounter = [];
 
     function syncStockDailyWeek() {
-        $allStocks = Stock::all();
+        $allStocks = Stock::allStockWithoutCS();
         $client = new TushareClient();
         foreach ($allStocks as $stock) {
             $this->counterDelayCounter("stock");
@@ -184,10 +190,22 @@ class StockSyncController extends Controller
                 }
                 $insertData[$k] = $v;
             }
-            $tmp = collect($insertData);
-            $allInsertDate[] = $tmp->only(["stock_id", "trade_date", "pe", "total_mv", "float_mv"])->toArray();
+//            $tmp = collect($insertData);
+//            $allInsertDate[] = $tmp->only(["stock_id", "trade_date", "pe", "total_mv", "float_mv"])->toArray();
+            $allInsertDate[] = $insertData;
         }
-        StockDailyExtra::insert($allInsertDate);
+        $index = 0;
+        $trunk = [];
+        foreach($allInsertDate as $key => $v) {
+            $index += 1;
+            $trunk[] = $v;
+            if ($index == 200) {
+                $index = 0;
+                StockDailyExtra::insert($trunk);
+                $trunk = [];
+            }
+        }
+        StockDailyExtra::insert($trunk);
         return 0;
     }
 
@@ -265,7 +283,7 @@ class StockSyncController extends Controller
     }
 
     function syncStockFQ() {
-        $allStocks = Stock::all();
+        $allStocks = Stock::allStockWithoutCS();
         $client = new TushareClient();
         foreach ($allStocks as $key => $stock) {
             $this->counterDelayCounter("fq");
@@ -275,7 +293,7 @@ class StockSyncController extends Controller
     }
 
     function syncStockFQWeek() {
-        $allStocks = Stock::all();
+        $allStocks = Stock::allStockWithoutCS();
         $client = new TushareClient();
         foreach ($allStocks as $key => $stock) {
             $this->counterDelayCounter("fq");

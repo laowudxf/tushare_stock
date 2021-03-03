@@ -34,7 +34,7 @@ class StockDailyExtra extends Model
 
 
     function stocks() {
-        return $this->hasMany(Stock::class);
+        return $this->belongsTo(Stock::class);
     }
 
     static function infoWithTsCodeQuery($ts_code) {

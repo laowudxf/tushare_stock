@@ -26,16 +26,18 @@ class StockController extends Controller
     public function buyStockAnalyse(Request $request) {
 
         $strategy = new DefaultStockStrategy();
+        $stockPools = Stock::all()->filter(function ($v){
+            return $v->marketValue() > 500;
+        });
 
-//        $now = now()->subDays(7);
-        $date = $request->input("date", "20210205");
+        $date = $request->input("date", now()->format("Ymd"));
         $now = Carbon::createFromFormat("Ymd", $date);
         $dateRange = $this->calcMondayAndFriday($now);
         $runner = new WeekStrategyRunContainer(Carbon::createFromFormat("Ymd", $dateRange[0]),
             Carbon::createFromFormat("Ymd", $dateRange[1]), $strategy);
         $strategy->setRunContainer($runner);
 
-        $stockPools = Stock::all();
+//        $stockPools = Stock::all();
 //        $stockPools = Stock::limit(10)->get();
         $stockPools = $stockPools->filter(function ($v){
             return strstr($v->name, "ST") == null;

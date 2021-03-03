@@ -13,7 +13,7 @@ class TushareClient
     const URI_DAILY = "daily";
     const URI_FQ = "adj_factor";
     const URI_TRADE_DATE = "trade_cal";
-    const BAK_DAILY = "bak_daily";
+    const DAILY_BASIC = "daily_basic";
     private  $client;
     public function __construct()
     {
@@ -25,13 +25,18 @@ class TushareClient
     }
 
     public function backDaily($tsCode, $tradeDate = null, $startDate = null, $endDate = null) {
-        $param = ["ts_code" => $tsCode];
+        $param = [];
+
+        if ($tsCode) {
+            $param = ["ts_code" => $tsCode];
+        }
+
         if($tradeDate) {
             $param = array_merge($param, ["trade_date" => $tradeDate]);
         } else if ($startDate && $endDate) {
             $param = array_merge($param, ["start_date" => $startDate, "end_date" => $endDate]);
         }
-        return $this->sendReqest(self::BAK_DAILY, $param);
+        return $this->sendReqest(self::DAILY_BASIC, $param);
     }
 
     public function stockDaily($tsCode, $tradeDate = null, $startDate = null, $endDate = null) {

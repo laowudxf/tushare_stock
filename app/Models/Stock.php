@@ -42,6 +42,12 @@ use Illuminate\Database\Eloquent\Model;
 class Stock extends Model
 {
     protected $fillable = ["name", "symbol", 'ts_code', 'area_id', 'industry_id', 'market_id', 'list_date'];
+
+    static function allStockWithoutCS() {
+        return Stock::all()->filter(function ($v){
+            return strpos($v->ts_code, "CS") !== true;
+        });
+    }
     function area() {
         return $this->belongsTo(Area::class);
     }
@@ -56,5 +62,14 @@ class Stock extends Model
 
     function stockDailies() {
        return $this->hasMany(StockDaily::class);
+    }
+
+    function stockDailyExtra() {
+        return $this->hasMany(StockDailyExtra::class);
+    }
+
+    function marketValue() {
+        $v =  StockDailyExtra::where('stock_id', $this->id)->orderBy("trade_date", 'desc')->first();
+        return $v ? $v->market_value : 0;
     }
 }

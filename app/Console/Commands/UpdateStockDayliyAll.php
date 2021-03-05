@@ -41,10 +41,6 @@ class UpdateStockDayliyAll extends Command
      */
     public function handle(UpdateController $updateController)
     {
-        //
-//        $week = $this->option("week");
-//        Log::info("schedule --- week:{$week}");
-//        return;
 
         $week = $this->option("week");
         $ssc = new StockSyncController();
@@ -55,14 +51,16 @@ class UpdateStockDayliyAll extends Command
                 return;
             }
 
+//            $tradeDate = "20210304";
+//            $ssc->syncStockDailyDay($tradeDate);
+//            $ssc->syncStockFQDay($tradeDate);
+
             $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
             $ssc->syncStockDailyDay($tradeDate->trade_date);
             $ssc->syncStockFQDay($tradeDate->trade_date);
             $this->call("stock:updateDailyExtra", [
                 "--week" => true
             ]);
-//            exec(env("PYTHON_VERSION", "python3.8")." ./Script/ak_share/updateMarketValue.py --day=True --password=".env('DB_PASSWORD')
-//                ." --host=".env("DB_HOST","127.0.0.1")." --database=".env("DB_DATABASE"));
             if (now()->isFriday()) {
                 $updateController->generatorWeekStock(null, true, $this);
             }

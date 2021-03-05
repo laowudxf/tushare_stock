@@ -74,24 +74,25 @@ class StockSyncController extends Controller
         }
     }
 
-    function syncStockDailyExtra($week = false) {
-        $allStocks = Stock::allStockWithoutCS();
+    function syncStockDailyExtra($week = false, $trade_date = null) {
         $client = new TushareClient();
-        $c = count($allStocks);
-        foreach ($allStocks as $key => $stock) {
-            if ($this->console) {
-                $this->console->info("deal {$key} count: {$c}");
-            } else {
-                Log::info("deal {$key} count: {$c}");
-            }
-            $this->counterDelayCounter("dailyExtra");
-            $result = null;
-            if ($week) {
-                $result = $client->backDaily(null, now()->format("Ymd"));
-            } else {
+        if ($week) {
+            $result = $client->backDaily(null, $trade_date ? $trade_date :now()->format("Ymd"));
+            $this->dealOneStockDailyExtra($result, null);
+        } else {
+            $allStocks = Stock::allStockWithoutCS();
+            $c = count($allStocks);
+            foreach ($allStocks as $key => $stock) {
+                if ($this->console) {
+                    $this->console->info("deal {$key} count: {$c}");
+                } else {
+                    Log::info("deal {$key} count: {$c}");
+                }
+                $this->counterDelayCounter("dailyExtra");
+                $result = null;
                 $result = $client->backDaily($stock->ts_code);
+                $this->dealOneStockDailyExtra($result, $stock);
             }
-            $this->dealOneStockDailyExtra($result, $stock);
         }
     }
 
@@ -161,7 +162,11 @@ class StockSyncController extends Controller
     }
 
     private function dealOneStockDailyExtra($data, $stock) {
-        $stockId = $stock->id;
+
+        $stockId = null;
+        if ($stock) {
+            $stockId = $stock->id;
+        }
 
         if ($data["code"] != 0) {
             Log::warning("sync stock daily failed msg:".$data["msg"]);
@@ -175,20 +180,36 @@ class StockSyncController extends Controller
 
         $insertData = [];
 
-        Log::info("update stock daily extra symbol:{$stock->symbol} name:{$stock->name}");
+        if ($stock) {
+            Log::info("update stock daily extra symbol:{$stock->symbol} name:{$stock->name}");
+        }
         $allInsertDate = [];
         foreach ($items as $item) {
             $trade_date = $item[1];
             if (StockDailyExtra::where('trade_date', $trade_date)->where('stock_id', $stockId)->exists()) {
                 continue;
             }
+            $hasStockId = true;
             foreach ($item as $key => $v) {
                 $k = $fields[$key];
                 if ($k == "ts_code") {
-                    $insertData["stock_id"] = $stockId;
+                    if ($stock) {
+                        $insertData["stock_id"] = $stockId;
+                    } else {
+                       $s = Stock::where('ts_code', $v)->first();
+                       if ($s) {
+                           $insertData["stock_id"] = $s->id;
+                       } else {
+                           $hasStockId = false;
+                       }
+                    }
                     continue;
                 }
                 $insertData[$k] = $v;
+            }
+
+            if($hasStockId == false) {
+                continue;
             }
 //            $tmp = collect($insertData);
 //            $allInsertDate[] = $tmp->only(["stock_id", "trade_date", "pe", "total_mv", "float_mv"])->toArray();

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Http\Controllers\StockSyncController;
 use App\Http\Controllers\UpdateController;
 use App\Models\TradeDate;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -46,28 +47,38 @@ class UpdateStockDayliyAll extends Command
         $ssc = new StockSyncController();
         $updateController->updateTradeDate($week);
         if ($week) {
-            if (now()->isWeekend()) {
+            $date = "20210305";
+
+            $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
+            $date = $tradeDate->trade_date;
+            $dateCarbon = Carbon::createFromFormat("Ymd", $date);
+            if ($dateCarbon->isWeekend()) {
                 Log::info("周末不需要拉取");
                 return;
             }
 
-//            $tradeDate = "20210304";
-//            $ssc->syncStockDailyDay($tradeDate);
-//            $ssc->syncStockFQDay($tradeDate);
 
-            $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
-            $ssc->syncStockDailyDay($tradeDate->trade_date);
-            $ssc->syncStockFQDay($tradeDate->trade_date);
+            $ssc->syncStockDailyDay($date);
+            $ssc->syncStockFQDay($date);
             $this->call("stock:updateDailyExtra", [
-                "--week" => true
+                "--week" => true,
+                "--date" => $date
             ]);
-            if (now()->isFriday()) {
+
+            $this->call("stock:genIndStock", [
+                "--day" => true,
+                "--date" => $date
+            ]);
+
+            if ($dateCarbon->isFriday()) {
                 $updateController->generatorWeekStock(null, true, $this);
             }
         } else {
             $ssc->syncStockDailyAll();
             $ssc->syncStockFQ();
             $this->call("stock:updateDailyExtra");
+            $this->call("stock:genIndStock");
+            $updateController->generatorWeekStock(null, false, $this);
         }
     }
 }

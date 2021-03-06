@@ -12,7 +12,7 @@ class UpdateDailyExtra extends Command
      *
      * @var string
      */
-    protected $signature = 'stock:updateDailyExtra {--week}';
+    protected $signature = 'stock:updateDailyExtra {--week} {--date=}';
 
     /**
      * The console command description.
@@ -40,8 +40,9 @@ class UpdateDailyExtra extends Command
     {
         //
         $week = $this->option("week");
+        $date = $this->option("date");
         $ssc = new StockSyncController();
         $ssc->console = $this;
-        $ssc->syncStockDailyExtra($week);
+        $ssc->syncStockDailyExtra($week, $date);
     }
 }

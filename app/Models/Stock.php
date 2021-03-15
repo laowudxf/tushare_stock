@@ -70,6 +70,6 @@ class Stock extends Model
 
     function marketValue() {
         $v =  StockDailyExtra::where('stock_id', $this->id)->orderBy("trade_date", 'desc')->first();
-        return $v ? $v->market_value : 0;
+        return $v ? $v->total_mv : 0;
     }
 }

@@ -47,10 +47,11 @@ class UpdateStockDayliyAll extends Command
         $ssc = new StockSyncController();
         $updateController->updateTradeDate($week);
         if ($week) {
-            $date = "20210305";
+//            $date = "20210308";
 
-            $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
-            $date = $tradeDate->trade_date;
+//            $tradeDate = TradeDate::orderBy("trade_date", 'desc')->first();
+//            $date = $tradeDate->trade_date;
+            $date = now()->format("Ymd");
             $dateCarbon = Carbon::createFromFormat("Ymd", $date);
             if ($dateCarbon->isWeekend()) {
                 Log::info("周末不需要拉取");

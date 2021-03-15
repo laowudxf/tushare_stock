@@ -27,7 +27,7 @@ class StockController extends Controller
 
         $strategy = new DefaultStockStrategy();
         $stockPools = Stock::all()->filter(function ($v){
-            return $v->marketValue() > 500;
+            return $v->marketValue() > 300e4;
         });
 
         $date = $request->input("date", now()->format("Ymd"));
